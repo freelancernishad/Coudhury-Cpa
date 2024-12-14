@@ -31,8 +31,6 @@ class SystemSettingController extends Controller
 
         // Retrieve settings from the request
         $settingsData = $request->all();
-        $envPath = base_path('.env');
-        $envContents = file_exists($envPath) ? file_get_contents($envPath) : '';
 
         foreach ($settingsData as $setting) {
             // Update or create the setting in the database
@@ -40,32 +38,9 @@ class SystemSettingController extends Controller
                 ['key' => $setting['key']],
                 ['value' => $setting['value']]
             );
-
-            // Handle AWS or other specific keys by updating the .env file
-            // if (in_array($setting['key'], [
-            //     'AWS_ACCESS_KEY_ID',
-            //     'AWS_SECRET_ACCESS_KEY',
-            //     'AWS_DEFAULT_REGION',
-            //     'AWS_BUCKET',
-            //     'AWS_URL',
-            //     'AWS_ENDPOINT',
-            //     'AWS_USE_PATH_STYLE_ENDPOINT',
-            // ])) {
-            //     $pattern = "/^" . preg_quote($setting['key'], '/') . "=.*/m";
-
-            //     // Update or append the key-value pair in .env
-            //     if (preg_match($pattern, $envContents)) {
-            //         $envContents = preg_replace($pattern, $setting['key'] . '=' . $setting['value'], $envContents);
-            //     } else {
-            //         $envContents .= "\n" . $setting['key'] . '=' . $setting['value'];
-            //     }
-            // }
         }
 
-        // Write back to .env safely
-        if (!empty($envContents)) {
-            file_put_contents($envPath, $envContents);
-        }
+
 
 
         // Return success response
