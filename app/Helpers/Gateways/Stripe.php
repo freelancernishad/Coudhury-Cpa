@@ -81,6 +81,17 @@ function createStripeCheckoutSession(array $data): JsonResponse
                     'quantity' => 1,
                 ];
             }
+        }else{
+            $lineItems[] = [
+                'price_data' => [
+                    'currency' => $currency,
+                    'product_data' => [
+                        'name' => 'tax payment', // Product name for the package
+                    ],
+                    'unit_amount' => $finalAmount * 100, // Amount in cents
+                ],
+                'quantity' => 1,
+            ];
         }
 
         // If there are addons, add them as additional line items
