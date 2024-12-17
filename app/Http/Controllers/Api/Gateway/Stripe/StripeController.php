@@ -23,7 +23,7 @@ class StripeController extends Controller
     public function createCheckoutSession(Request $request)
     {
         // Get the authenticated user's ID
-        $userId = auth()->id();
+        $userId = auth()->id() ?? null;
 
         // Validate incoming data
         $validator = Validator::make($request->all(), [
