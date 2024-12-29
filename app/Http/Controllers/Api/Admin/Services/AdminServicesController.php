@@ -44,8 +44,8 @@ class AdminServicesController extends Controller
         }
 
         // Create the service
-        $service = Service::create($request->only(['name', 'slug', 'parent_id', 'price','is_state_select']));
-        $service->updateParentFromRequest($request->all());
+        $service = Service::create($request->only(['name', 'slug', 'parent_id', 'input_label', 'price','is_select_multiple_child','is_add_on','is_state_select']));
+        // $service->updateParentFromRequest($request->all());
         return response()->json($service, 201);
     }
 
@@ -95,8 +95,8 @@ class AdminServicesController extends Controller
         }
 
         // Update the service
-        $service->update($request->only(['name', 'slug', 'parent_id', 'price','is_state_select']));
-        $service->updateParentFromRequest($request->all());
+        $service->update($request->only(['name', 'slug', 'parent_id', 'input_label', 'price','is_select_multiple_child','is_add_on','is_state_select']));
+        // $service->updateParentFromRequest($request->all());
         return response()->json(['message' => 'Service updated successfully', 'service' => $service], 200);
     }
 
