@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Coupon\CouponController;
 use App\Http\Controllers\Api\Admin\Users\UserController;
 use App\Http\Controllers\Api\Auth\Admin\AdminAuthController;
 use App\Http\Controllers\Api\Admin\Package\AdminPackageController;
+use App\Http\Controllers\Api\Admin\Services\AdminServicesController;
 use App\Http\Controllers\Api\SystemSettings\SystemSettingController;
 use App\Http\Controllers\Api\Admin\Blogs\Articles\ArticlesController;
 use App\Http\Controllers\Api\Admin\Blogs\Category\CategoryController;
@@ -137,6 +138,19 @@ Route::prefix('admin')->group(function () {
 
         Route::get('/by-category/with-child-articles', [ArticlesController::class, 'getArticlesByCategory']);
 
+    });
+
+
+
+    // Admin routes for services
+    Route::group(['prefix' => 'services'], function () {
+        Route::get('/', [AdminServicesController::class, 'index']);
+        Route::post('/', [AdminServicesController::class, 'store']);
+        Route::get('/{id}', [AdminServicesController::class, 'show']);
+        Route::put('/{id}', [AdminServicesController::class, 'update']);
+        Route::delete('/{id}', [AdminServicesController::class, 'destroy']);
+        Route::get('/all/list', [AdminServicesController::class, 'list']);
+        Route::put('/reassign-update/{id}', [AdminServicesController::class, 'reassignAndUpdateParent']);
     });
 
 
