@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\AllowedOriginController;
 use App\Http\Controllers\Api\Coupon\CouponController;
 use App\Http\Controllers\Api\Admin\Users\UserController;
 use App\Http\Controllers\Api\Auth\Admin\AdminAuthController;
+use App\Http\Controllers\Api\Admin\Chat\AdminChatApiController;
 use App\Http\Controllers\Api\Admin\Package\AdminPackageController;
 use App\Http\Controllers\Api\Admin\Services\AdminServicesController;
 use App\Http\Controllers\Api\SystemSettings\SystemSettingController;
@@ -100,6 +101,15 @@ Route::prefix('admin')->group(function () {
         Route::get('/support/{ticket}', [AdminSupportTicketApiController::class, 'show']);
         Route::post('/support/{ticket}/reply', [AdminSupportTicketApiController::class, 'reply']);
         Route::patch('/support/{ticket}/status', [AdminSupportTicketApiController::class, 'updateStatus']);
+
+
+
+        // Chat routes
+        Route::get('/chats', [AdminChatApiController::class, 'index']); // Get all chats
+        Route::get('/chats/{chat}', [AdminChatApiController::class, 'show']); // View a specific chat
+        Route::post('/chats/{chat}/send-message', [AdminChatApiController::class, 'sendMessage']); // Send a message in a chat
+        Route::patch('/chats/{chat}/status', [AdminChatApiController::class, 'updateStatus']); // Update chat status
+
 
 
 

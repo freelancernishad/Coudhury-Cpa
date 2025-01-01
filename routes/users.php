@@ -4,8 +4,10 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\AuthenticateUser;
 use App\Http\Controllers\Api\Coupon\CouponController;
+use App\Http\Controllers\Api\User\Chat\ChatApiController;
 use App\Http\Controllers\Api\Auth\User\AuthUserController;
 use App\Http\Controllers\Api\Auth\User\VerificationController;
+use App\Http\Controllers\Api\Admin\Chat\AdminChatApiController;
 use App\Http\Controllers\Api\User\Package\UserPackageController;
 use App\Http\Controllers\Api\Auth\User\UserPasswordResetController;
 use App\Http\Controllers\Api\User\UserManagement\UserProfileController;
@@ -46,6 +48,14 @@ Route::prefix('user')->group(function () {
         Route::post('/support', [SupportTicketApiController::class, 'store']);
         Route::get('/support/{ticket}', [SupportTicketApiController::class, 'show']);
         Route::post('/support/{ticket}/reply', [AdminSupportTicketApiController::class, 'reply']);
+
+
+        // Chat routes
+        Route::get('/chats', [ChatApiController::class, 'index']); // Get all chats
+        Route::post('/chats', [ChatApiController::class, 'store']); // Create a new chat
+        Route::get('/chats/{chat}', [ChatApiController::class, 'show']); // View a specific chat
+        Route::post('/chats/{chat}/send-message', [AdminChatApiController::class, 'sendMessage']); // Send a message in a chat
+
 
 
         Route::get('/packages/history', [UserPurchasedHistoryController::class, 'getPurchasedHistory']);
