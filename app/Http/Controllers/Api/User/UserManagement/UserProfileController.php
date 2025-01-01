@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers\Api\User\UserManagement;
 
-use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
@@ -68,4 +69,24 @@ class UserProfileController extends Controller
 
         return response()->json($user);
     }
+
+
+    public function updateClientIds()
+{
+    // Get all users where client_id is NULL or 0
+    $users = User::all();
+
+    foreach ($users as $user) {
+        do {
+            // Generate a random 6-digit number
+            $clientId = mt_rand(100000, 999999);
+        } while (User::where('client_id', $clientId)->exists()); // Ensure it's unique
+
+        // Update the user with the unique client_id
+        $user->update(['client_id' => $clientId]);
+    }
+
+    return response()->json(['message' => 'Client IDs updated successfully!']);
+}
+
 }

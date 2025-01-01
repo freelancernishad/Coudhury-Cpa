@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Server\ServerStatusController;
 use App\Http\Controllers\Api\User\Package\UserPackageController;
 use App\Http\Controllers\Api\Admin\Services\AdminServicesController;
 use App\Http\Controllers\Api\User\PackageAddon\UserPackageAddonController;
+use App\Http\Controllers\Api\User\UserManagement\UserProfileController;
 
 // Load users and admins route files
 if (file_exists($userRoutes = __DIR__.'/example.php')) {
@@ -25,6 +26,8 @@ if (file_exists($stripeRoutes = __DIR__.'/Gateways/stripe.php')) {
 }
 
 
+
+Route::get('/updateClientIds', [UserProfileController::class, 'updateClientIds']);
 
 Route::get('/server-status', [ServerStatusController::class, 'checkStatus']);
 
