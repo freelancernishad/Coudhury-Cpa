@@ -27,7 +27,7 @@ if (file_exists($stripeRoutes = __DIR__.'/Gateways/stripe.php')) {
 
 
 
-Route::get('/updateClientIds', [UserProfileController::class, 'updateClientIds']);
+// Route::get('/updateClientIds', [UserProfileController::class, 'updateClientIds']);
 
 Route::get('/server-status', [ServerStatusController::class, 'checkStatus']);
 
