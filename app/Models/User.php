@@ -26,6 +26,12 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         'email_verified_at',
         'otp',
         'otp_expires_at',
+        'client_id',
+        'status',
+        'nid_no',
+        'address_line1',
+        'address_line2',
+        'phone',
     ];
 
     /**
@@ -51,6 +57,38 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+
+      /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Generate a unique client_id before creating the user
+        static::creating(function ($user) {
+            $user->client_id = static::generateUniqueClientId();
+        });
+    }
+
+    /**
+     * Generate a unique numeric client_id.
+     *
+     * @return int
+     */
+    protected static function generateUniqueClientId(): int
+    {
+        do {
+            $clientId = mt_rand(100000, 999999); // Generate a random 6-digit number
+        } while (static::where('client_id', $clientId)->exists()); // Ensure it's unique
+
+        return $clientId;
+    }
+
+
+
+
 
     /**
      * Get the identifier that will be stored in the subject claim of the JWT.
@@ -99,5 +137,33 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         return $filePath;
     }
 
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * Get the last payment date of the user.
+     *
+     * @return string|null
+     */
+    public function getLastPaymentDateAttribute()
+    {
+        $lastPayment = $this->payments()->latest('paid_at')->first();
+        return $lastPayment ? $lastPayment->paid_at : null;
+    }
+
+    /**
+     * Get the last payment amount of the user.
+     *
+     * @return float|null
+     */
+    public function getLastPaymentAmountAttribute()
+    {
+        $lastPayment = $this->payments()->latest('paid_at')->first();
+        return $lastPayment ? $lastPayment->amount : null;
+    }
+
+    protected $appends = ['last_payment_date', 'last_payment_amount'];
 
 }

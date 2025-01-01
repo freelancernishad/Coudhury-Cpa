@@ -34,6 +34,11 @@ class UserProfileController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|string|max:255',
             'profile_picture' => 'sometimes|image|max:2048',
+            'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
+            'nid_no' => 'sometimes|string|max:255',
+            'address_line1' => 'sometimes|string|max:255',
+            'address_line2' => 'sometimes|string|max:255',
+            'phone' => 'sometimes|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -41,20 +46,25 @@ class UserProfileController extends Controller
         }
 
         // Update user's profile with validated data
-        $user->update($request->only(['name']));
+        $user->update($request->only([
+            'name',
+            'email',
+            'nid_no',
+            'address_line1',
+            'address_line2',
+            'phone',
+        ]));
 
-
-            // Handle profile picture upload if provided
-    if ($request->hasFile('profile_picture')) {
-        try {
-            $filePath = $user->saveProfilePicture($request->file('profile_picture'));
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to upload profile picture: ' . $e->getMessage(),
-            ], 500);
+        // Handle profile picture upload if provided
+        if ($request->hasFile('profile_picture')) {
+            try {
+                $filePath = $user->saveProfilePicture($request->file('profile_picture'));
+            } catch (\Exception $e) {
+                return response()->json([
+                    'message' => 'Failed to upload profile picture: ' . $e->getMessage(),
+                ], 500);
+            }
         }
-    }
-
 
         return response()->json($user);
     }

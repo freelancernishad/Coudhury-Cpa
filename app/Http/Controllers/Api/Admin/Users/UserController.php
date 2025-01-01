@@ -37,26 +37,47 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
-
         // Define validation rules
-        $rules =  [
+        $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
+            'profile_picture' => 'sometimes|image|max:2048',
+            'status' => 'sometimes|string|max:255',
+            'nid_no' => 'sometimes|string|max:255',
+            'address_line1' => 'sometimes|string|max:255',
+            'address_line2' => 'sometimes|string|max:255',
+            'phone' => 'sometimes|string|max:255',
         ];
+
+        // Validate the request
         $validationResponse = validateRequest($request->all(), $rules);
         if ($validationResponse) {
             return $validationResponse; // Return if validation fails
         }
-
-
 
         // Create the user
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'status' => $request->status ?? 'active', // Default to 'active' if not provided
+            'nid_no' => $request->nid_no,
+            'address_line1' => $request->address_line1,
+            'address_line2' => $request->address_line2,
+            'phone' => $request->phone,
         ]);
+
+        // Handle profile picture upload if provided
+        if ($request->hasFile('profile_picture')) {
+            try {
+                $filePath = $user->saveProfilePicture($request->file('profile_picture'));
+            } catch (\Exception $e) {
+                return response()->json([
+                    'message' => 'Failed to upload profile picture: ' . $e->getMessage(),
+                ], 500);
+            }
+        }
 
         return response()->json($user, 201);
     }
@@ -71,28 +92,50 @@ class UserController extends Controller
     // Update a user
     public function update(Request $request, User $user)
     {
+        // Define validation rules
         $rules = [
             'name' => 'sometimes|string|max:255',
             'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
             'password' => 'sometimes|string|min:8',
+            'profile_picture' => 'sometimes|image|max:2048',
+            'status' => 'sometimes|string|max:255',
+            'nid_no' => 'sometimes|string|max:255',
+            'address_line1' => 'sometimes|string|max:255',
+            'address_line2' => 'sometimes|string|max:255',
+            'phone' => 'sometimes|string|max:255',
         ];
 
+        // Validate the request
         $validationResponse = validateRequest($request->all(), $rules);
         if ($validationResponse) {
             return $validationResponse; // Return if validation fails
         }
 
-
-
         // Prepare the data array for update
         $data = [
-            'name' => $request->name ?? $user->name, // Keep current value if not updating
+            'name' => $request->name ?? $user->name,
             'email' => $request->email ?? $user->email,
             'password' => isset($request->password) ? Hash::make($request->password) : $user->password,
+            'status' => $request->status ?? $user->status,
+            'nid_no' => $request->nid_no ?? $user->nid_no,
+            'address_line1' => $request->address_line1 ?? $user->address_line1,
+            'address_line2' => $request->address_line2 ?? $user->address_line2,
+            'phone' => $request->phone ?? $user->phone,
         ];
 
         // Update the user with the new data
         $user->update($data);
+
+        // Handle profile picture upload if provided
+        if ($request->hasFile('profile_picture')) {
+            try {
+                $filePath = $user->saveProfilePicture($request->file('profile_picture'));
+            } catch (\Exception $e) {
+                return response()->json([
+                    'message' => 'Failed to upload profile picture: ' . $e->getMessage(),
+                ], 500);
+            }
+        }
 
         return response()->json($user);
     }
