@@ -11,7 +11,7 @@ class CreateChatsTable extends Migration
         Schema::create('chats', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id');
-            $table->string('subject'); // Can be renamed to 'title' or 'topic'
+            $table->string('subject')->nullable(); // Can be renamed to 'title' or 'topic'
             $table->text('message'); // Can be renamed to 'initial_message' or 'content'
             $table->string('status')->default('open'); // Optional for chat
             $table->string('priority')->nullable(); // Optional for chat

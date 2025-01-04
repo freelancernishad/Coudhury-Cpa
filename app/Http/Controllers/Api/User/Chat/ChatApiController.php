@@ -21,7 +21,7 @@ class ChatApiController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'subject' => 'required|string|max:255', // Can be renamed to 'title' or 'topic'
+            // 'subject' => 'required|string|max:255', // Can be renamed to 'title' or 'topic'
             'message' => 'required|string', // Initial message for the chat
             'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf,docx|max:2048', // Validate attachment
         ]);
@@ -33,7 +33,7 @@ class ChatApiController extends Controller
         // Create the chat
         $chat = Chat::create([
             'user_id' => Auth::id(),
-            'subject' => $request->subject,
+            // 'subject' => $request->subject,
             'message' => $request->message,
         ]);
 
@@ -65,7 +65,7 @@ class ChatApiController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'subject' => 'nullable|string|max:255', // Can be renamed to 'title' or 'topic'
+            // 'subject' => 'nullable|string|max:255', // Can be renamed to 'title' or 'topic'
             'message' => 'nullable|string', // Update the initial message
             'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf,docx|max:2048', // Validate attachment
         ]);
@@ -75,7 +75,7 @@ class ChatApiController extends Controller
         }
 
         // Update the chat details
-        $chat->update($request->only('subject', 'message'));
+        $chat->update($request->only('message'));
 
         // Handle attachment if present
         if ($request->hasFile('attachment')) {
