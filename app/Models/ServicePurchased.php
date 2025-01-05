@@ -79,5 +79,9 @@ public static function getGroupedByStatus($userId, $status = null)
     return $servicePurchasedList;
 }
 
+    public function files()
+    {
+        return $this->hasMany(ServicePurchasedFile::class);
+    }
 
 }

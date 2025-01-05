@@ -10,6 +10,7 @@ use Stripe\Checkout\Session;
 use App\Models\ServicePurchased;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
+use App\Models\ServicePurchasedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
@@ -44,7 +45,7 @@ class UserServicePurchasedController extends Controller
         // Extract amount from service_details
         $serviceDetails = $request->input('service_details');
         $amount = $serviceDetails['total_price'] ?? 0; // Get the total_price from service_details
-        $notes = $serviceDetails['notes'] ?? ''; 
+        $notes = $serviceDetails['notes'] ?? '';
 
         if ($amount <= 0) {
             return response()->json(['error' => 'Invalid total price in service details'], 400);
@@ -91,6 +92,19 @@ class UserServicePurchasedController extends Controller
             'discount_amount' => $discount,
             'service_details' => $serviceDetails,
         ]);
+
+
+        // Extract files from service_details (if they are part of the JSON)
+        $files = $serviceDetails['files'] ?? [];
+
+        // Upload files if they are provided in service_details
+        if (!empty($files)) {
+            foreach ($files as $file) {
+                // Use the ServicePurchasedFile model's upload method
+                ServicePurchasedFile::ServicePurchasedFileUpload($file, $servicePurchased->id);
+            }
+        }
+
 
         // Create the payment record
         $payment = Payment::create([
