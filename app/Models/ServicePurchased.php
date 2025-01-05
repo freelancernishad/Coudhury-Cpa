@@ -51,7 +51,7 @@ class ServicePurchased extends Model
 public static function getGroupedByStatus($userId, $status = null)
 {
     // Fetch all ServicePurchased records for the user, excluding "pending" status
-    $query = self::where('user_id', $userId)
+    $query = self::where('user_id', $userId)->with('files')
         ->where('status', '!=', 'pending') // Exclude "pending" status
         ->with(['user' => function ($query) {
             $query->select(['id', 'name', 'client_id', 'email', 'phone']);

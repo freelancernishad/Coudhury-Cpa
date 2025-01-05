@@ -24,7 +24,7 @@ class ServicePurchasedController extends Controller
         $search = $request->query('search'); // Global search term
 
         // Query builder
-        $query = ServicePurchased::with(['user'])
+        $query = ServicePurchased::with(['user','files'])
             ->latest();
 
         // Apply filters
