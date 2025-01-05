@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers\Api\User\ServicePurchased;
 
-use App\Http\Controllers\Controller;
-use App\Models\ServicePurchased;
-use App\Models\Payment;
-use App\Models\Coupon;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Stripe\Stripe;
+use App\Models\Coupon;
+use App\Models\Payment;
+use Illuminate\Http\Request;
 use Stripe\Checkout\Session;
+use App\Models\ServicePurchased;
+use Illuminate\Http\JsonResponse;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class UserServicePurchasedController extends Controller
 {
@@ -23,12 +24,16 @@ class UserServicePurchasedController extends Controller
     public function createStripeCheckoutSession(Request $request): JsonResponse
     {
         // Validate the request
-        $data = $request->validate([
+        $validator = Validator::make($request->all(), [
             'coupon_id' => 'nullable|exists:coupons,id',
-            'service_details' => 'required',
+            'service_details' => 'required|array',
             'success_url' => 'nullable|string',
             'cancel_url' => 'nullable|string',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
 
         // Get the authenticated user's ID
         $userId = Auth::id();
@@ -37,7 +42,7 @@ class UserServicePurchasedController extends Controller
         }
 
         // Extract amount from service_details
-        $serviceDetails = $data['service_details'];
+        $serviceDetails = $request->input('service_details');
         $amount = $serviceDetails['total_price'] ?? 0; // Get the total_price from service_details
 
         if ($amount <= 0) {
@@ -48,11 +53,11 @@ class UserServicePurchasedController extends Controller
         $currency = 'USD';
 
         // Coupon ID (if provided)
-        $couponId = $data['coupon_id'] ?? null;
+        $couponId = $request->input('coupon_id');
 
         // Success and cancel URLs
-        $baseSuccessUrl = $data['success_url'] ?? 'http://localhost:8000/stripe/payment/success';
-        $baseCancelUrl = $data['cancel_url'] ?? 'http://localhost:8000/stripe/payment/cancel';
+        $baseSuccessUrl = $request->input('success_url', 'http://localhost:8000/stripe/payment/success');
+        $baseCancelUrl = $request->input('cancel_url', 'http://localhost:8000/stripe/payment/cancel');
 
         $discount = 0;
         $finalAmount = $amount; // Start with the base amount
@@ -100,7 +105,7 @@ class UserServicePurchasedController extends Controller
         ]);
 
         try {
-            Stripe::setApiKey(config('STRIPE_SECRET'));
+            Stripe::setApiKey(config('services.stripe.secret')); // Use the correct config key
 
             // Success and Cancel URLs for Stripe Checkout session
             $successUrl = "{$baseSuccessUrl}?payment_id={$payment->id}&session_id={CHECKOUT_SESSION_ID}";
@@ -123,7 +128,7 @@ class UserServicePurchasedController extends Controller
 
             // Create the Stripe Checkout session
             $session = Session::create([
-                'payment_method_types' => ['card', 'amazon_pay', 'us_bank_account'],
+                'payment_method_types' => ['card'], // Only card for simplicity
                 'line_items' => $lineItems,
                 'mode' => 'payment',
                 'success_url' => $successUrl,
