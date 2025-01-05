@@ -26,7 +26,7 @@ class AdminServicesController extends Controller
         // Validate the request
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'slug' => 'required|string|unique:services,slug',
+            // 'slug' => 'required|string|unique:services,slug',
             'parent_id' => 'nullable|exists:services,id',
             'input_label' => 'nullable|string|max:255',
             'price' => 'nullable|numeric|min:0',
@@ -71,7 +71,7 @@ class AdminServicesController extends Controller
         // Validate the request
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'slug' => 'required|string|unique:services,slug,' . $id,
+            // 'slug' => 'required|string|unique:services,slug,' . $id,
             'parent_id' => 'nullable|exists:services,id|not_in:' . $id,
             'input_label' => 'nullable|string|max:255',
             'price' => 'nullable|numeric|min:0',

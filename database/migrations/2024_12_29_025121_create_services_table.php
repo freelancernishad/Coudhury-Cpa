@@ -16,7 +16,7 @@ class CreateServicesTable extends Migration
         Schema::create('services', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('slug')->unique();
+            $table->string('slug')->nullable();
             $table->unsignedBigInteger('parent_id')->nullable();
             $table->string('input_label')->nullable(); // Dynamic input label
             $table->decimal('price', 8, 2)->nullable(); // Price for last level children

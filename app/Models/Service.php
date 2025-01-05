@@ -107,7 +107,11 @@ class Service extends Model
     {
         return $this->isLastLevel();
     }
-
+    
+    public function getPriceAttribute($value)
+    {
+        return (float) number_format($value, 2, '.', ''); // Format to two decimal places
+    }
     /**
      * Append is_last_level to the model's array/JSON representation.
      */
