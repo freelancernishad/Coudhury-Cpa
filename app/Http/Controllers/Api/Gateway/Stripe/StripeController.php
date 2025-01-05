@@ -3,12 +3,13 @@
 namespace App\Http\Controllers\Api\Gateway\Stripe;
 
 use Stripe\Stripe;
-use Stripe\Checkout\Session;
-use Stripe\PaymentIntent;
-use App\Models\Payment;
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use Stripe\Webhook;
+use App\Models\Payment;
+use Stripe\PaymentIntent;
+use Illuminate\Http\Request;
+use Stripe\Checkout\Session;
+use App\Models\ServicePurchased;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 
 class StripeController extends Controller
@@ -53,7 +54,6 @@ class StripeController extends Controller
     }
 
 
-    // Handle Stripe Webhook
     public function handleWebhook(Request $request)
     {
         // Secret key for Stripe Webhook signature verification
@@ -81,9 +81,28 @@ class StripeController extends Controller
                             'response_data' => json_encode($session),
                         ]);
 
-                        // Check if payable type is "package" and call PackageSubscribe
+                        // Check if payable type is "ServicePurchased" and update the ServicePurchased record
+                        if ($payment->payable_type === ServicePurchased::class) {
+                            $servicePurchased = ServicePurchased::find($payment->payable_id);
+                            if ($servicePurchased) {
+                                // Update the paid_amount and due_amount
+                                $servicePurchased->paid_amount += $payment->amount;
+                                $servicePurchased->due_amount = $servicePurchased->subtotal - $servicePurchased->paid_amount;
+
+                                // Update status based on due_amount
+                                if ($servicePurchased->due_amount <= 0) {
+                                    $servicePurchased->status = 'completed';
+                                } else {
+                                    $servicePurchased->status = 'partially_paid';
+                                }
+
+                                $servicePurchased->save();
+                            }
+                        }
+
+                        // Check if payable type is "Package" and call PackageSubscribe
                         if ($payment->payable_type === 'Package') {
-                            PackageSubscribe($payment->payable_id,$payment->user_id);
+                            PackageSubscribe($payment->payable_id, $payment->user_id);
                         }
                     }
                     break;
@@ -98,7 +117,26 @@ class StripeController extends Controller
                             'paid_at' => now(),
                         ]);
 
-                        // Check if payable type is "package" and call PackageSubscribe
+                        // Check if payable type is "ServicePurchased" and update the ServicePurchased record
+                        if ($payment->payable_type === ServicePurchased::class) {
+                            $servicePurchased = ServicePurchased::find($payment->payable_id);
+                            if ($servicePurchased) {
+                                // Update the paid_amount and due_amount
+                                $servicePurchased->paid_amount += $payment->amount;
+                                $servicePurchased->due_amount = $servicePurchased->subtotal - $servicePurchased->paid_amount;
+
+                                // Update status based on due_amount
+                                if ($servicePurchased->due_amount <= 0) {
+                                    $servicePurchased->status = 'In review';
+                                } else {
+                                    $servicePurchased->status = 'partially_paid';
+                                }
+
+                                $servicePurchased->save();
+                            }
+                        }
+
+                        // Check if payable type is "Package" and call PackageSubscribe
                         if ($payment->payable_type === 'Package') {
                             PackageSubscribe($payment->payable_id);
                         }
@@ -113,6 +151,16 @@ class StripeController extends Controller
                         $payment->update([
                             'status' => 'failed',
                         ]);
+
+                        // Check if payable type is "ServicePurchased" and update the ServicePurchased record
+                        if ($payment->payable_type === ServicePurchased::class) {
+                            $servicePurchased = ServicePurchased::find($payment->payable_id);
+                            if ($servicePurchased) {
+                                // Update status to failed
+                                $servicePurchased->status = 'failed';
+                                $servicePurchased->save();
+                            }
+                        }
                     }
                     break;
 
