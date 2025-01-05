@@ -25,7 +25,7 @@ class UserServicePurchasedController extends Controller
         // Validate the request
         $data = $request->validate([
             'coupon_id' => 'nullable|exists:coupons,id',
-            'service_details' => 'required|array',
+            'service_details' => 'required',
             'success_url' => 'nullable|string',
             'cancel_url' => 'nullable|string',
         ]);
