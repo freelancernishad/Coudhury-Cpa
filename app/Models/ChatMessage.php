@@ -19,8 +19,8 @@ class ChatMessage extends Model
     ];
 
     protected $with = [
-        'admin',
-        'user',
+        // 'admin',
+        // 'user',
     ];
 
     // Relationship with the parent message (nested messages)
@@ -67,4 +67,23 @@ class ChatMessage extends Model
 
         return $filePath;
     }
+    
+    protected $hidden = [
+        'chat_id',
+        'user_id',
+        'admin_id',
+    ];
+
+
+    public function getSenderTypeAttribute()
+    {
+        if ($this->admin_id) {
+            return 'admin';
+        } elseif ($this->user_id) {
+            return 'user';
+        }
+
+        return 'unknown';
+    }
+    protected $appends = ['sender_type']; // Add this line
 }

@@ -13,7 +13,7 @@ class ChatApiController extends Controller
     // Get all chats for the authenticated user
     public function index()
     {
-        $chats = Chat::where('user_id', Auth::id())->orderBy('id', 'desc')->get();
+        $chats = Chat::select('id','user_id','message','attachment','created_at')->where('user_id', Auth::id())->orderBy('id', 'desc')->get();
         return response()->json($chats, 200);
     }
 
