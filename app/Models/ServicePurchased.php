@@ -10,7 +10,7 @@ class ServicePurchased extends Model
     use HasFactory;
 
     protected $table = 'service_purchased';
-    
+
     // Fields that can be mass-assigned
     protected $fillable = [
         'user_id',
@@ -34,7 +34,7 @@ class ServicePurchased extends Model
     // Relationship with User model
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->select(['id', 'name', 'client_id', 'email', 'phone']);
     }
 
     // Relationship with Payment model (polymorphic)
@@ -42,5 +42,42 @@ class ServicePurchased extends Model
     {
         return $this->morphMany(Payment::class, 'payable');
     }
+
+
+    // In App\Models\ServicePurchased
+
+// In App\Models\ServicePurchased
+
+public static function getGroupedByStatus($userId, $status = null)
+{
+    // Fetch all ServicePurchased records for the user, excluding "pending" status
+    $query = self::where('user_id', $userId)
+        ->where('status', '!=', 'pending') // Exclude "pending" status
+        ->with(['user' => function ($query) {
+            $query->select(['id', 'name', 'client_id', 'email', 'phone']);
+        }])
+        ->latest();
+
+    // Apply status filter if provided
+    if ($status) {
+        $query->where('status', $status);
+    }
+
+    // Get the results
+    $servicePurchasedList = $query->get();
+
+    // Group records by status if no specific status is provided
+    if (!$status) {
+        $grouped = [
+            'in_review' => $servicePurchasedList->where('status', 'In Review')->values(),
+            'others' => $servicePurchasedList->where('status', '!=', 'In Review')->values(),
+        ];
+        return $grouped;
+    }
+
+    // Return filtered results if a specific status is provided
+    return $servicePurchasedList;
+}
+
 
 }

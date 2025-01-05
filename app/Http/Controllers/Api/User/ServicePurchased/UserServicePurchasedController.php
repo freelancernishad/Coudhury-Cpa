@@ -44,6 +44,7 @@ class UserServicePurchasedController extends Controller
         // Extract amount from service_details
         $serviceDetails = $request->input('service_details');
         $amount = $serviceDetails['total_price'] ?? 0; // Get the total_price from service_details
+        $notes = $serviceDetails['notes'] ?? ''; 
 
         if ($amount <= 0) {
             return response()->json(['error' => 'Invalid total price in service details'], 400);
@@ -85,7 +86,7 @@ class UserServicePurchasedController extends Controller
             'paid_amount' => 0, // Initially 0, updated after payment success
             'due_amount' => $finalAmount,
             'status' => 'pending',
-            'client_note' => 'Payment initiated via Stripe',
+            'client_note' => $notes,
             'admin_note' => null,
             'discount_amount' => $discount,
             'service_details' => $serviceDetails,

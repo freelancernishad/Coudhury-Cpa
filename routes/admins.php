@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\Admin\Package\AdminPurchasedHistoryController;
 use App\Http\Controllers\Api\Admin\PackageAddon\AdminPackageAddonController;
 use App\Http\Controllers\Api\Admin\DashboardMetrics\AdminDashboardController;
 use App\Http\Controllers\Api\Admin\SocialMedia\AdminSocialMediaLinkController;
+use App\Http\Controllers\Api\Admin\ServicePurchased\ServicePurchasedController;
 use App\Http\Controllers\Api\Admin\SupportTicket\AdminSupportTicketApiController;
 
 Route::prefix('auth/admin')->group(function () {
@@ -164,6 +165,11 @@ Route::prefix('admin')->group(function () {
     });
 
 
+    Route::prefix('/service-purchased')->group(function () {
+        Route::get('/', [ServicePurchasedController::class, 'index']); // List all records
+        Route::get('/{id}', [ServicePurchasedController::class, 'show']); // View a single record
+        Route::delete('/{id}', [ServicePurchasedController::class, 'destroy']); // Delete a record
+    });
 
 
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Admin\Users;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Models\ServicePurchased;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -83,11 +84,27 @@ class UserController extends Controller
     }
 
 
-    // Show user details
-    public function show(User $user)
+    public function show(User $user, Request $request)
     {
-        return response()->json($user);
+        // Get the status from the request parameters
+        $status = $request->query('status');
+
+        // Get the user details
+        // $userDetails = $user->only(['id', 'name', 'client_id', 'email', 'phone']);
+        $userDetails = $user;
+
+        // Get ServicePurchased lists based on the status
+        $servicePurchasedLists = ServicePurchased::getGroupedByStatus($user->id, $status);
+
+        // Combine user details and ServicePurchased lists
+        $response = [
+            'user' => $userDetails,
+            'service_purchased' => $servicePurchasedLists,
+        ];
+
+        return response()->json($response);
     }
+
 
     // Update a user
     public function update(Request $request, User $user)
