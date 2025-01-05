@@ -20,9 +20,10 @@ class ChatApiController extends Controller
     // Create a new chat
     public function store(Request $request)
     {
+        // Validate the request
         $validator = Validator::make($request->all(), [
-            // 'subject' => 'required|string|max:255', // Can be renamed to 'title' or 'topic'
-            'message' => 'required|string', // Initial message for the chat
+            'message' => 'required|string',
+            'parent_id' => 'nullable|exists:chat_messages,id', // Check if the parent message exists
             'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf,docx|max:2048', // Validate attachment
         ]);
 
@@ -30,21 +31,59 @@ class ChatApiController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // Create the chat
-        $chat = Chat::create([
-            'user_id' => Auth::id(),
-            // 'subject' => $request->subject,
-            'message' => $request->message,
-        ]);
+        // Get the authenticated user
+        $user = Auth::user();
 
-        // Handle attachment if present
-        if ($request->hasFile('attachment')) {
-            $chat->saveAttachment($request->file('attachment'));
+        // Check if the user has any existing chats
+        $existingChat = Chat::where('user_id', $user->id)->first();
+
+        if ($existingChat) {
+            // If a chat exists, create a reply to that chat
+            $messageData = [
+                'message' => $request->message,
+                'parent_id' => $request->parent_id, // Set the parent message ID if provided
+                'user_id' => $user->id, // Associate the message with the user
+            ];
+
+            // Create a new message associated with the existing chat
+            $message = $existingChat->messages()->create($messageData);
+
+            // Handle attachment if present
+            if ($request->hasFile('attachment')) {
+                $message->saveAttachment($request->file('attachment'));
+            }
+
+            return response()->json([
+                'message' => 'Reply sent successfully.',
+                'chat_message' => $message
+            ], 200);
+        } else {
+            // If no chat exists, create a new chat
+            $chat = Chat::create([
+                'user_id' => $user->id,
+                'message' => $request->message,
+            ]);
+
+            // Create the initial message for the new chat
+            $messageData = [
+                'message' => $request->message,
+                'user_id' => $user->id, // Associate the message with the user
+            ];
+
+            $message = $chat->messages()->create($messageData);
+
+            // Handle attachment if present
+            if ($request->hasFile('attachment')) {
+                $message->saveAttachment($request->file('attachment'));
+            }
+
+            return response()->json([
+                'message' => 'Chat created successfully.',
+                'chat' => $chat,
+                'chat_message' => $message
+            ], 201);
         }
-
-        return response()->json(['message' => 'Chat created successfully.', 'chat' => $chat], 201);
     }
-
     // Show a specific chat
     public function show(Chat $chat)
     {
