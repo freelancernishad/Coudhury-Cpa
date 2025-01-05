@@ -107,4 +107,44 @@ class ServicePurchasedController extends Controller
             'message' => 'ServicePurchased record deleted successfully.',
         ]);
     }
+
+
+
+
+    /**
+     * Change the status of a ServicePurchased record.
+     *
+     * @param Request $request
+     * @param int $id
+     * @return JsonResponse
+     */
+    public function changeStatus(Request $request, int $id): JsonResponse
+    {
+        // Validate the request
+        $request->validate([
+            'status' => 'required|string|in:In Review,Reviewed,Due Added,Working,Complete', // Allowed statuses
+        ]);
+
+        // Find the ServicePurchased record
+        $servicePurchased = ServicePurchased::find($id);
+
+        if (!$servicePurchased) {
+            return response()->json([
+                'success' => false,
+                'message' => 'ServicePurchased record not found.',
+            ], 404);
+        }
+
+        // Update the status
+        $servicePurchased->status = $request->input('status');
+        $servicePurchased->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'ServicePurchased status updated successfully.',
+            'data' => $servicePurchased,
+        ]);
+    }
+
+
 }
