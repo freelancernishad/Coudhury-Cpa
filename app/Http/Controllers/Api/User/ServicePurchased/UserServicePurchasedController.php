@@ -105,7 +105,7 @@ class UserServicePurchasedController extends Controller
         ]);
 
         try {
-            Stripe::setApiKey(config('services.stripe.secret')); // Use the correct config key
+            Stripe::setApiKey(config('STRIPE_SECRET'));
 
             // Success and Cancel URLs for Stripe Checkout session
             $successUrl = "{$baseSuccessUrl}?payment_id={$payment->id}&session_id={CHECKOUT_SESSION_ID}";
