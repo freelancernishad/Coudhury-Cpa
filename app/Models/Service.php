@@ -30,13 +30,13 @@ class Service extends Model
                 // Update the parent's is_select_multiple_child if it exists in the request data
                 if (isset($requestData['is_select_multiple_child'])) {
                     $parent->update(['is_select_multiple_child' => $requestData['is_select_multiple_child']]);
-                    $this->update(['is_select_multiple_child' => 0]); // Reset the child's value
+                    $this->update(['is_select_multiple_child' => false]); // Reset the child's value
                 }
 
                 // Update the parent's is_add_on if it exists in the request data
                 if (isset($requestData['is_add_on'])) {
                     $parent->update(['is_add_on' => $requestData['is_add_on']]);
-                    $this->update(['is_add_on' => 0]); // Reset the child's value
+                    $this->update(['is_add_on' => false]); // Reset the child's value
                 }
             }
         }
@@ -107,7 +107,7 @@ class Service extends Model
     {
         return $this->isLastLevel();
     }
-    
+
     public function getPriceAttribute($value)
     {
         return (float) number_format($value, 2, '.', ''); // Format to two decimal places
@@ -116,4 +116,32 @@ class Service extends Model
      * Append is_last_level to the model's array/JSON representation.
      */
     protected $appends = ['is_last_level'];
+
+
+     /**
+     * Accessor for is_select_multiple_child.
+     */
+    public function getIsSelectMultipleChildAttribute($value)
+    {
+        return (bool) $value; // Convert 0/1 to false/true
+    }
+
+    /**
+     * Accessor for is_add_on.
+     */
+    public function getIsAddOnAttribute($value)
+    {
+        return (bool) $value; // Convert 0/1 to false/true
+    }
+
+    /**
+     * Accessor for is_state_select.
+     */
+    public function getIsStateSelectAttribute($value)
+    {
+        return (bool) $value; // Convert 0/1 to false/true
+    }
+
+
+
 }
