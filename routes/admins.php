@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\Admin\DashboardMetrics\AdminDashboardController;
 use App\Http\Controllers\Api\Admin\SocialMedia\AdminSocialMediaLinkController;
 use App\Http\Controllers\Api\Admin\ServicePurchased\ServicePurchasedController;
 use App\Http\Controllers\Api\Admin\SupportTicket\AdminSupportTicketApiController;
+use App\Http\Controllers\Api\Admin\ServicePurchased\ServicePurchasedFileController;
 
 Route::prefix('auth/admin')->group(function () {
     Route::post('login', [AdminAuthController::class, 'login'])->name('admin.login');
@@ -172,6 +173,8 @@ Route::prefix('admin')->group(function () {
         Route::patch('{id}/change-status', [ServicePurchasedController::class, 'changeStatus']);
     });
 
+
+    Route::get('/documents', [ServicePurchasedFileController::class, 'getFilesGroupedByFolder']);
 
 
 

@@ -14,6 +14,7 @@ class ServicePurchasedFile extends Model
 
     // Fields that can be mass-assigned
     protected $fillable = [
+        'user_id',
         'service_purchased_id',
         'file_name',
         'file_path',
@@ -41,7 +42,7 @@ class ServicePurchasedFile extends Model
      * @param string $serviceName (name of the service)
      * @return \App\Models\ServicePurchasedFile
      */
-    public static function ServicePurchasedFileUpload($file, $servicePurchasedId, $serviceName='')
+    public static function ServicePurchasedFileUpload($file, $servicePurchasedId,$userId, $serviceName='')
     {
         // Define the S3 directory
         $directory = 'service_purchased_files';
@@ -57,6 +58,7 @@ class ServicePurchasedFile extends Model
 
         // Save file details to the database
         $servicePurchasedFile = self::create([
+            'user_id' => $userId,
             'service_purchased_id' => $servicePurchasedId,
             'file_name' => $file->getClientOriginalName(),
             'file_path' => $filePath,

@@ -114,7 +114,7 @@ class UserServicePurchasedController extends Controller
                 ]);
 
                 // Use the ServicePurchasedFile model's upload method
-                ServicePurchasedFile::ServicePurchasedFileUpload($file, $servicePurchased->id);
+                ServicePurchasedFile::ServicePurchasedFileUpload($file, $servicePurchased->id,$userId);
             }
         }
 
