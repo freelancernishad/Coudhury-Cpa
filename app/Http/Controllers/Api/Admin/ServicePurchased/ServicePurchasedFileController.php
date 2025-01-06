@@ -170,45 +170,60 @@ class ServicePurchasedFileController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     public function getLatestUploadsGroupedByUserAndService(Request $request)
-{
-    // Validate the request
-    $validator = Validator::make($request->all(), [
-        // 'user_id' => 'required|exists:users,id', // user_id is required (if needed)
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json($validator->errors(), 422);
+    {
+        // Validate the request
+        $validator = Validator::make($request->all(), [
+            'per_page' => 'nullable|integer|min:1|max:100', // Validate per_page query parameter
+            // 'user_id' => 'required|exists:users,id', // user_id is required (if needed)
+        ]);
+    
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+    
+        // Get the number of items per page (default to 10 if not provided)
+        $perPage = $request->input('per_page', 10);
+    
+        // Fetch the latest upload timestamp grouped by user_id and service_purchased_id
+        $latestUploads = ServicePurchasedFile::select(
+                'service_purchased_files.user_id',
+                'service_purchased_files.service_purchased_id',
+                'users.name as user_name', // Include user's name
+                'users.email as user_email', // Include user's email
+                DB::raw('MAX(service_purchased_files.created_at) as latest_upload')
+            )
+            ->join('users', 'service_purchased_files.user_id', '=', 'users.id') // Join the users table
+            // ->where('service_purchased_files.user_id', $userId) // Uncomment if user_id filter is needed
+            ->groupBy('service_purchased_files.user_id', 'service_purchased_files.service_purchased_id', 'users.name', 'users.email')
+            ->paginate($perPage); // Use pagination
+    
+        // Transform the response
+        $response = $latestUploads->map(function ($item) {
+            // Calculate time ago using Carbon
+            $latestUploadTime = Carbon::parse($item->latest_upload);
+            $timeAgo = $latestUploadTime->diffForHumans(); // e.g., "1 hour ago", "2 days ago"
+    
+            return [
+                'user_id' => $item->user_id,
+                'service_purchased_id' => $item->service_purchased_id,
+                'user_name' => $item->user_name, // Include user's name
+                'user_email' => $item->user_email, // Include user's email
+                'latest_upload' => $item->latest_upload,
+                'time_ago' => $timeAgo, // Include time ago
+            ];
+        });
+    
+        // Return the paginated response with metadata
+        return response()->json([
+            'data' => $response,
+            'pagination' => [
+                'total' => $latestUploads->total(),
+                'per_page' => $latestUploads->perPage(),
+                'current_page' => $latestUploads->currentPage(),
+                'last_page' => $latestUploads->lastPage(),
+                'from' => $latestUploads->firstItem(),
+                'to' => $latestUploads->lastItem(),
+            ],
+        ]);
     }
-
-    // Fetch the latest upload timestamp grouped by user_id and service_purchased_id
-    $latestUploads = ServicePurchasedFile::select(
-            'service_purchased_files.user_id',
-            'service_purchased_files.service_purchased_id',
-            'users.name as user_name', // Include user's name
-            'users.email as user_email', // Include user's email
-            DB::raw('MAX(service_purchased_files.created_at) as latest_upload')
-        )
-        ->join('users', 'service_purchased_files.user_id', '=', 'users.id') // Join the users table
-        // ->where('service_purchased_files.user_id', $userId) // Uncomment if user_id filter is needed
-        ->groupBy('service_purchased_files.user_id', 'service_purchased_files.service_purchased_id', 'users.name', 'users.email')
-        ->get();
-
-    // Transform the response
-    $response = $latestUploads->map(function ($item) {
-        // Calculate time ago using Carbon
-        $latestUploadTime = Carbon::parse($item->latest_upload);
-        $timeAgo = $latestUploadTime->diffForHumans(); // e.g., "1 hour ago", "2 days ago"
-
-        return [
-            'user_id' => $item->user_id,
-            'service_purchased_id' => $item->service_purchased_id,
-            'user_name' => $item->user_name, // Include user's name
-            'user_email' => $item->user_email, // Include user's email
-            'latest_upload' => $item->latest_upload,
-            'time_ago' => $timeAgo, // Include time ago
-        ];
-    });
-
-    return response()->json($response);
-}
 }
