@@ -164,6 +164,29 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         return $lastPayment ? $lastPayment->amount : null;
     }
 
-    protected $appends = ['last_payment_date', 'last_payment_amount'];
+
+
+       /**
+     * Calculate the total due amount for the user.
+     */
+    public function getTotalDueAttribute()
+    {
+        return $this->servicePurchased()->sum('due_amount');
+    }
+
+    /**
+     * Relationship with ServicePurchased model.
+     */
+    public function servicePurchased()
+    {
+        return $this->hasMany(ServicePurchased::class);
+    }
+
+    public function getServicePurchasedListAttribute()
+    {
+        return $this->servicePurchased()->select('service_details')->get();
+    }
+
+    protected $appends = ['last_payment_date', 'last_payment_amount','total_due','service_purchased_list'];
 
 }
