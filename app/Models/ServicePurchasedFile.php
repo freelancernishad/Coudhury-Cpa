@@ -41,7 +41,7 @@ class ServicePurchasedFile extends Model
      * @param string $serviceName (name of the service)
      * @return \App\Models\ServicePurchasedFile
      */
-    public static function ServicePurchasedFileUpload($file, $servicePurchasedId, $serviceName)
+    public static function ServicePurchasedFileUpload($file, $servicePurchasedId, $serviceName='')
     {
         // Define the S3 directory
         $directory = 'service_purchased_files';
