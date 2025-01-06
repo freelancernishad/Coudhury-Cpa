@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Stripe\Checkout\Session;
 use App\Models\ServicePurchased;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\ServicePurchasedFile;
 use Illuminate\Support\Facades\Auth;
@@ -28,6 +29,8 @@ class UserServicePurchasedController extends Controller
         $validator = Validator::make($request->all(), [
             'coupon_id' => 'nullable|exists:coupons,id',
             'service_details' => 'required|array',
+            'files' => 'required|array',
+            'files.*' => 'file|mimes:jpeg,png,pdf,doc,docx|max:2048', // Adjust file types and size as needed
             'success_url' => 'nullable|string',
             'cancel_url' => 'nullable|string',
         ]);
@@ -93,18 +96,21 @@ class UserServicePurchasedController extends Controller
             'service_details' => $serviceDetails,
         ]);
 
-
-        // Extract files from service_details (if they are part of the JSON)
-        $files = $serviceDetails['files'] ?? [];
-
-        // Upload files if they are provided in service_details
-        if (!empty($files)) {
+        // Handle file uploads from the request
+        if ($request->hasFile('files')) {
+            $files = $request->file('files');
             foreach ($files as $file) {
+                // Log the file details (optional)
+                Log::info('Uploading file:', [
+                    'name' => $file->getClientOriginalName(),
+                    'size' => $file->getSize(),
+                    'mime_type' => $file->getMimeType(),
+                ]);
+
                 // Use the ServicePurchasedFile model's upload method
                 ServicePurchasedFile::ServicePurchasedFileUpload($file, $servicePurchased->id);
             }
         }
-
 
         // Create the payment record
         $payment = Payment::create([
