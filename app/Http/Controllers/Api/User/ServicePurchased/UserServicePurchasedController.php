@@ -28,83 +28,80 @@ class UserServicePurchasedController extends Controller
         // Validate the request
         $validator = Validator::make($request->all(), [
             'coupon_id' => 'nullable|exists:coupons,id',
-            'selected_services' => 'required|array', // Ensure selected_services is an array
-            'selected_services.*.id' => 'required|exists:services,id', // Validate each service ID
-            'addons' => 'nullable|array', // Addons are optional
-            'addons.*.id' => 'nullable|exists:services,id', // Validate each addon ID
+            'service_details' => 'required', // Ensure service_details is a valid JSON string
             'files' => 'required|array',
             'files.*' => 'file|mimes:jpeg,png,pdf,doc,docx',
             'success_url' => 'nullable|string',
             'cancel_url' => 'nullable|string',
-            'notes' => 'nullable|string', // Notes are optional
-            'total_price' => 'required|numeric|min:0', // Total price must be provided and valid
         ]);
-    
+
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
-    
+
         // Get the authenticated user's ID
         $userId = Auth::id();
         if (!$userId) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
-    
-        // Extract data from the request
-        $selectedServices = $request->input('selected_services', []);
-        $addons = $request->input('addons', []);
-        $notes = $request->input('notes', '');
-        $totalPrice = $request->input('total_price', 0);
-    
-        if ($totalPrice <= 0) {
-            return response()->json(['error' => 'Invalid total price'], 400);
+
+        // Decode the service_details JSON string into an array
+        $serviceDetails = json_decode($request->input('service_details'), true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return response()->json(['error' => 'Invalid service_details JSON'], 400);
         }
-    
+
+        // Extract amount from service_details
+        $amount = $serviceDetails['total_price'] ?? 0; // Get the total_price from service_details
+        $notes = $serviceDetails['notes'] ?? '';
+
+        if ($amount <= 0) {
+            return response()->json(['error' => 'Invalid total price in service details'], 400);
+        }
+
         // Fixed currency
         $currency = 'USD';
-    
+
         // Coupon ID (if provided)
         $couponId = $request->input('coupon_id');
-    
+
         // Success and cancel URLs
         $baseSuccessUrl = $request->input('success_url', 'http://localhost:8000/stripe/payment/success');
         $baseCancelUrl = $request->input('cancel_url', 'http://localhost:8000/stripe/payment/cancel');
-    
+
         $discount = 0;
-        $finalAmount = $totalPrice; // Start with the base amount
-    
+        $finalAmount = $amount; // Start with the base amount
+
         // Handle coupon discount
         if ($couponId) {
             $coupon = Coupon::find($couponId);
             if ($coupon && $coupon->isValid()) {
-                $discount = $coupon->getDiscountAmount($totalPrice);
+                $discount = $coupon->getDiscountAmount($amount);
                 $finalAmount -= $discount; // Subtract discount from the final amount
             } else {
                 return response()->json(['error' => 'Invalid or expired coupon'], 400);
             }
         }
-    
+
         if ($finalAmount <= 0) {
             return response()->json(['error' => 'Payment amount must be greater than zero'], 400);
         }
-    
+
         // Create the ServicePurchased record
         $servicePurchased = ServicePurchased::create([
             'user_id' => $userId,
             'date' => now(),
-            'subtotal' => $totalPrice,
+            'subtotal' => $amount,
             'paid_amount' => 0, // Initially 0, updated after payment success
             'due_amount' => $finalAmount,
             'status' => 'pending',
             'client_note' => $notes,
             'admin_note' => null,
             'discount_amount' => $discount,
-            'service_details' => [
-                'selected_services' => $selectedServices,
-                'addons' => $addons,
-            ], // Store selected services and addons
+            'service_details' => $serviceDetails, // Store the decoded service_details
         ]);
-    
+
         // Handle file uploads from the request
         if ($request->hasFile('files')) {
             $files = $request->file('files');
@@ -115,12 +112,12 @@ class UserServicePurchasedController extends Controller
                     'size' => $file->getSize(),
                     'mime_type' => $file->getMimeType(),
                 ]);
-    
+
                 // Use the ServicePurchasedFile model's upload method
                 ServicePurchasedFile::ServicePurchasedFileUpload($file, $servicePurchased->id);
             }
         }
-    
+
         // Create the payment record
         $payment = Payment::create([
             'user_id' => $userId,
@@ -133,14 +130,14 @@ class UserServicePurchasedController extends Controller
             'payable_id' => $servicePurchased->id,
             'coupon_id' => $couponId,
         ]);
-    
+
         try {
             Stripe::setApiKey(config('STRIPE_SECRET'));
-    
+
             // Success and Cancel URLs for Stripe Checkout session
             $successUrl = "{$baseSuccessUrl}?payment_id={$payment->id}&session_id={CHECKOUT_SESSION_ID}";
             $cancelUrl = "{$baseCancelUrl}?payment_id={$payment->id}&session_id={CHECKOUT_SESSION_ID}";
-    
+
             // Product details
             $productName = 'Service Purchase';
             $lineItems = [
@@ -155,7 +152,7 @@ class UserServicePurchasedController extends Controller
                     'quantity' => 1,
                 ],
             ];
-    
+
             // Create the Stripe Checkout session
             $session = Session::create([
                 'payment_method_types' => ['card'], // Only card for simplicity
@@ -168,7 +165,7 @@ class UserServicePurchasedController extends Controller
                     'service_purchased_id' => $servicePurchased->id,
                 ],
             ]);
-    
+
             return response()->json([
                 'session_id' => $session->id,
                 'payment_id' => $payment->id,
