@@ -195,6 +195,7 @@ class ServicePurchasedFileController extends Controller
             ->join('users', 'service_purchased_files.user_id', '=', 'users.id') // Join the users table
             // ->where('service_purchased_files.user_id', $userId) // Uncomment if user_id filter is needed
             ->groupBy('service_purchased_files.user_id', 'service_purchased_files.service_purchased_id', 'users.name', 'users.email')
+            ->orderBy('latest_upload', 'desc') // Order by latest_upload in descending order
             ->paginate($perPage); // Use Laravel's pagination
 
         // Transform the items in the paginated result
