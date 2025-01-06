@@ -61,8 +61,35 @@ class AdminPaymentController extends Controller
             ]);
         }
 
+        // Select specific fields and include user data
+        $query->with(['user' => function ($query) {
+            $query->select([
+                'id',
+                'client_id',
+                'profile_picture',
+                'name',
+                'email',
+            ]);
+        }]);
+
         // Fetch results with pagination and order by `paid_at` descending
         $transactions = $query->orderBy('paid_at', 'desc')->paginate($request->input('per_page', 15));
+
+        // Transform the response to include user data in the desired format
+        $transactions->getCollection()->transform(function ($payment) {
+            return [
+                'id' => $payment->id,
+                'transaction_id' => $payment->transaction_id,
+                'client_id' => $payment->user->client_id,
+                'name' => $payment->user->name,
+                'email' => $payment->user->email,
+                'profile_picture' => $payment->user->profile_picture,
+                'amount' => $payment->amount,
+                'paid_at' => $payment->paid_at,
+                'event' => $payment->event,
+                'status' => $payment->status,
+            ];
+        });
 
         return response()->json($transactions);
     }
