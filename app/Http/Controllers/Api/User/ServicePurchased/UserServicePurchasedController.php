@@ -30,7 +30,7 @@ class UserServicePurchasedController extends Controller
             'coupon_id' => 'nullable|exists:coupons,id',
             'service_details' => 'required|array',
             'files' => 'required|array',
-            'files.*' => 'file|mimes:jpeg,png,pdf,doc,docx|max:2048', // Adjust file types and size as needed
+            'files.*' => 'file|mimes:jpeg,png,pdf,doc,docx', 
             'success_url' => 'nullable|string',
             'cancel_url' => 'nullable|string',
         ]);
