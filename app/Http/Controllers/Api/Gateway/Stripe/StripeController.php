@@ -73,7 +73,7 @@ class StripeController extends Controller
                     $session = $event->data->object; // Contains \Stripe\Checkout\Session
 
                     // Find the payment record and update status
-                    $payment = Payment::where('transaction_id', $session->id)->first();
+                    $payment = Payment::where('stripe_session', $session->id)->first();
                     if ($payment) {
                         $payment->update([
                             'status' => 'completed',

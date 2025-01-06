@@ -11,7 +11,7 @@ class Payment extends Model
     // transaction_id, user->client_id,user->name , user-> email, amount , paid_at,status
     protected $fillable = [
         'user_id', 'gateway', 'transaction_id', 'currency', 'amount', 'fee',
-        'status', 'response_data', 'payment_method', 'payer_email', 'paid_at','coupon_id','payable_type','payable_id','user_package_id','event'
+        'status', 'response_data', 'payment_method', 'payer_email', 'paid_at','coupon_id','payable_type','payable_id','user_package_id','event','stripe_session',
     ];
 
     protected $casts = [

@@ -166,6 +166,8 @@ class UserServicePurchasedController extends Controller
                 ],
             ]);
 
+            $payment->update(['stripe_session' => $session->id]);
+
             return response()->json([
                 'session_id' => $session->id,
                 'payment_id' => $payment->id,
