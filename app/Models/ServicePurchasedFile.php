@@ -104,4 +104,12 @@ class ServicePurchasedFile extends Model
         }
         return null;
     }
+
+
+       // Relationship with User model
+       public function user()
+       {
+           return $this->belongsTo(User::class);
+       }
+
 }
