@@ -175,6 +175,7 @@ Route::prefix('admin')->group(function () {
 
 
     Route::get('/documents', [ServicePurchasedFileController::class, 'getFilesGroupedByFolder']);
+    Route::get('/latest/documents', [ServicePurchasedFileController::class, 'getLatestUploadsGroupedByUserAndService']);
 
 
 

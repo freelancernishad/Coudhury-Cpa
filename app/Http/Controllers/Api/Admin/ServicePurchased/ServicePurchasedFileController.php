@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\Api\Admin\ServicePurchased;
 
-use App\Http\Controllers\Controller;
-
 use Illuminate\Http\Request;
-use App\Models\ServicePurchasedFile;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Auth;
+
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
+use App\Models\ServicePurchasedFile;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class ServicePurchasedFileController extends Controller
 {
@@ -157,6 +158,45 @@ class ServicePurchasedFileController extends Controller
                 'folders' => $folders,
             ];
         }
+
+        return response()->json($response);
+    }
+
+
+    /**
+     * Get the latest upload timestamp grouped by user_id and service_purchased_id.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getLatestUploadsGroupedByUserAndService(Request $request)
+    {
+        // Validate the request
+        $validator = Validator::make($request->all(), [
+            // 'user_id' => 'required|exists:users,id', // user_id is required
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        // Extract validated data
+        $userId = $request->input('user_id');
+
+        // Fetch the latest upload timestamp grouped by user_id and service_purchased_id
+        $latestUploads = ServicePurchasedFile::select('user_id', 'service_purchased_id', DB::raw('MAX(created_at) as latest_upload'))
+            // ->where('user_id', $userId)
+            ->groupBy('user_id', 'service_purchased_id')
+            ->get();
+
+        // Transform the response
+        $response = $latestUploads->map(function ($item) {
+            return [
+                'user_id' => $item->user_id,
+                'service_purchased_id' => $item->service_purchased_id,
+                'latest_upload' => $item->latest_upload,
+            ];
+        });
 
         return response()->json($response);
     }
