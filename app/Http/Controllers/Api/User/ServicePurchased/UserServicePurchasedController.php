@@ -28,9 +28,9 @@ class UserServicePurchasedController extends Controller
         // Validate the request
         $validator = Validator::make($request->all(), [
             'coupon_id' => 'nullable|exists:coupons,id',
-            'service_details' => 'required|array',
+            'service_details' => 'required',
             'files' => 'required|array',
-            'files.*' => 'file|mimes:jpeg,png,pdf,doc,docx', 
+            'files.*' => 'file|mimes:jpeg,png,pdf,doc,docx',
             'success_url' => 'nullable|string',
             'cancel_url' => 'nullable|string',
         ]);
