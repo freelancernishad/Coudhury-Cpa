@@ -22,6 +22,8 @@ class AdminPaymentController extends Controller
         // Filter by status if provided
         if ($request->has('status')) {
             $query->where('status', $request->input('status'));
+        } else {
+            $query->where('status', 'completed'); 
         }
 
         // Filter by gateway if provided
