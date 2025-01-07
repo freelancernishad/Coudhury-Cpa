@@ -184,9 +184,35 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
 
     public function getServicePurchasedListAttribute()
     {
-        return $this->servicePurchased()->select('service_details')->get();
+        $servicePurchased = $this->servicePurchased()->select('service_details')->get();
+
+        $result = [];
+
+        foreach ($servicePurchased as $service) {
+            $serviceDetails = $service->service_details;
+
+            $names = [];
+
+            // Extract names from selected_services
+            foreach ($serviceDetails['selected_services'] as $selectedService) {
+                $names[] = $selectedService['name'];
+            }
+
+            // Extract names from addons => selectedServices
+            foreach ($serviceDetails['addons'] as $addon) {
+                foreach ($addon['selectedServices'] as $selectedService) {
+                    $names[] = $selectedService['name'];
+                }
+            }
+
+            $result[] = $names;
+        }
+
+        return $result;
     }
 
     protected $appends = ['last_payment_date', 'last_payment_amount','total_due','service_purchased_list'];
 
 }
+
+
