@@ -171,6 +171,8 @@ Route::prefix('admin')->group(function () {
         Route::get('/{id}', [ServicePurchasedController::class, 'show']); // View a single record
         Route::delete('/{id}', [ServicePurchasedController::class, 'destroy']); // Delete a record
         Route::patch('{id}/change-status', [ServicePurchasedController::class, 'changeStatus']);
+        Route::post('{id}/add-due-amount', [ServicePurchasedController::class, 'addDueAmount']);
+        Route::post('{id}/remove-due-amount', [ServicePurchasedController::class, 'removeDueAmount']);
 
         Route::post('/upload-file', [ServicePurchasedFileController::class, 'uploadFile']);
 

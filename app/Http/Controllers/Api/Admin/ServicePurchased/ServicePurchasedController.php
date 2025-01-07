@@ -148,5 +148,75 @@ class ServicePurchasedController extends Controller
         ]);
     }
 
+    public function addDueAmount(Request $request, int $id): JsonResponse
+    {
+        // Validate the request
+        $request->validate([
+            'due_amount' => 'required|numeric|min:0', // Ensure due_amount is a positive number
+        ]);
+
+        // Find the ServicePurchased record
+        $servicePurchased = ServicePurchased::find($id);
+
+        if (!$servicePurchased) {
+            return response()->json([
+                'success' => false,
+                'message' => 'ServicePurchased record not found.',
+            ], 404);
+        }
+
+        // Update the due_amount
+        $servicePurchased->due_amount += $request->input('due_amount'); // Add the new due amount to the existing one
+        $servicePurchased->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Due amount added successfully.',
+            'data' => $servicePurchased,
+        ]);
+    }
+
+
+    public function removeDueAmount(Request $request, int $id): JsonResponse
+    {
+        // Validate the request
+        $request->validate([
+            'due_amount' => 'required|numeric|min:0', // Ensure due_amount is a positive number
+        ]);
+
+        // Find the ServicePurchased record
+        $servicePurchased = ServicePurchased::find($id);
+
+        if (!$servicePurchased) {
+            return response()->json([
+                'success' => false,
+                'message' => 'ServicePurchased record not found.',
+            ], 404);
+        }
+
+        // Calculate the new due_amount
+        $newDueAmount = $servicePurchased->due_amount - $request->input('due_amount');
+
+        // Ensure the due_amount does not go below zero
+        if ($newDueAmount < 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Due amount cannot be negative.',
+            ], 400);
+        }
+
+        // Update the due_amount
+        $servicePurchased->due_amount = $newDueAmount;
+        $servicePurchased->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Due amount removed successfully.',
+            'data' => $servicePurchased,
+        ]);
+    }
+
+
+
 
 }
