@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin\ServicePurchased;
 use Illuminate\Http\Request;
 
 use Illuminate\Support\Carbon;
+use App\Models\ServicePurchased;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\ServicePurchasedFile;
@@ -23,26 +24,32 @@ class ServicePurchasedFileController extends Controller
     {
         // Validate the request
         $validator = Validator::make($request->all(), [
-            'user_id' => 'required', // File is required
-            'file' => 'required|file', // File is required
-            'service_purchased_id' => 'required|exists:service_purchased,id', // service_purchased_id is required
-            'service_name' => 'required|string', // service_name is required
+            'file' => 'required|file',
+            'service_purchased_id' => 'required|exists:service_purchased,id',
+            'service_name' => 'nullable|string',
+            'note' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
-        // Get the authenticated user's ID
-        $userId = Auth::id();
+        // Fetch the user_id from the service_purchased table
+        $servicePurchasedId = $request->input('service_purchased_id');
+        $servicePurchased = ServicePurchased::find($servicePurchasedId);
+
+        if (!$servicePurchased) {
+            return response()->json(['message' => 'Service purchased record not found'], 404);
+        }
+
+        $userId = $servicePurchased->user_id; // Get user_id from service_purchased
 
         // Upload the file and save its details
-        $user_id = $request->file('user_id');
         $file = $request->file('file');
-        $servicePurchasedId = $request->input('service_purchased_id');
         $serviceName = $request->input('service_name');
+        $note = $request->input('note'); // Get note from the request
 
-        $uploadedFile = ServicePurchasedFile::ServicePurchasedFileUpload($file, $servicePurchasedId,$user_id, $serviceName);
+        $uploadedFile = ServicePurchasedFile::ServicePurchasedFileUpload($file, $servicePurchasedId, $userId,$note, $serviceName);
 
         return response()->json([
             'message' => 'File uploaded successfully',

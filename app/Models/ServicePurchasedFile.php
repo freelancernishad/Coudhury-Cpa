@@ -26,6 +26,7 @@ class ServicePurchasedFile extends Model
         'month',       // New column
         'date',        // New column
         'service_name',// New column
+        'note',
     ];
 
     // Relationship with ServicePurchased model
@@ -42,7 +43,7 @@ class ServicePurchasedFile extends Model
      * @param string $serviceName (name of the service)
      * @return \App\Models\ServicePurchasedFile
      */
-    public static function ServicePurchasedFileUpload($file, $servicePurchasedId,$userId, $serviceName='')
+    public static function ServicePurchasedFileUpload($file, $servicePurchasedId,$userId,$note = null, $serviceName='')
     {
         // Define the S3 directory
         $directory = 'service_purchased_files';
@@ -70,6 +71,7 @@ class ServicePurchasedFile extends Model
             'month' => $currentDate->month, // Set month
             'date' => $currentDate->day, // Set date
             'service_name' => $serviceName, // Set service name
+            'note' => $note,
         ]);
 
         return $servicePurchasedFile;
