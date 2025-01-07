@@ -174,7 +174,7 @@ Route::prefix('admin')->group(function () {
         Route::post('{id}/add-due-amount', [ServicePurchasedController::class, 'addDueAmount']);
         Route::post('{id}/remove-due-amount', [ServicePurchasedController::class, 'removeDueAmount']);
 
-        Route::post('/upload-file', [ServicePurchasedFileController::class, 'uploadFile']);
+        Route::post('/upload-file', [ServicePurchasedFileController::class, 'uploadFiles']);
 
     });
 

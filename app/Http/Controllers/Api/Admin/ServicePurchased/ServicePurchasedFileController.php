@@ -20,11 +20,11 @@ class ServicePurchasedFileController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function uploadFile(Request $request)
+    public function uploadFiles(Request $request)
     {
         // Validate the request
         $validator = Validator::make($request->all(), [
-            'file' => 'required|file',
+            'files.*' => 'required|file', // Validate each file in the array
             'service_purchased_id' => 'required|exists:service_purchased,id',
             'service_name' => 'nullable|string',
             'note' => 'nullable|string',
@@ -44,16 +44,30 @@ class ServicePurchasedFileController extends Controller
 
         $userId = $servicePurchased->user_id; // Get user_id from service_purchased
 
-        // Upload the file and save its details
-        $file = $request->file('file');
+        // Get additional data from the request
         $serviceName = $request->input('service_name');
-        $note = $request->input('note'); // Get note from the request
+        $note = $request->input('note');
 
-        $uploadedFile = ServicePurchasedFile::ServicePurchasedFileUpload($file, $servicePurchasedId, $userId,$note, $serviceName);
+        // Initialize an array to store uploaded file details
+        $uploadedFiles = [];
+
+        // Loop through each file and upload it
+        foreach ($request->file('files') as $file) {
+            $uploadedFile = ServicePurchasedFile::ServicePurchasedFileUpload(
+                $file,
+                $servicePurchasedId,
+                $userId,
+                $note,
+                $serviceName
+            );
+
+            // Add the uploaded file details to the array
+            $uploadedFiles[] = $uploadedFile;
+        }
 
         return response()->json([
-            'message' => 'File uploaded successfully',
-            'file' => $uploadedFile,
+            'message' => 'Files uploaded successfully',
+            'files' => $uploadedFiles,
         ]);
     }
 
