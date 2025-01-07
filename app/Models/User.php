@@ -184,8 +184,12 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
 
     public function getServicePurchasedListAttribute()
     {
-        // Fetch the latest servicePurchased entry
-        $servicePurchased = $this->servicePurchased()->select('service_details')->latest()->first();
+        // Fetch the latest servicePurchased entry where status is not 'pending'
+        $servicePurchased = $this->servicePurchased()
+            ->where('status', '!=', 'pending') // Exclude pending status
+            ->select('service_details')
+            ->latest()
+            ->first();
 
         // If no servicePurchased entry exists, return an empty array
         if (!$servicePurchased) {
