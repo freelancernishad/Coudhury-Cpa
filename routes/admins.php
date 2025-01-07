@@ -55,6 +55,7 @@ Route::prefix('admin')->group(function () {
             Route::get('/{user}', [UserController::class, 'show']);     // Show user details
             Route::put('/{user}', [UserController::class, 'update']);   // Update user
             Route::delete('/{user}', [UserController::class, 'destroy']); // Delete user
+            Route::post('{user}/toggle-status', [UserController::class, 'toggleStatus']);
         });
 
         Route::prefix('coupons')->group(function () {

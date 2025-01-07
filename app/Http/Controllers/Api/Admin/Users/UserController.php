@@ -164,4 +164,42 @@ class UserController extends Controller
 
         return response()->json(['message' => 'User deleted successfully']);
     }
+
+
+
+     /**
+     * Activate or deactivate a user.
+     *
+     * @param Request $request
+     * @param User $user
+     * @return JsonResponse
+     */
+    public function toggleStatus(Request $request, User $user)
+    {
+        // Validate the request
+        $request->validate([
+            'status' => 'sometimes|string|in:active,inactive', // Optional status parameter
+        ]);
+
+        // Toggle the status if no specific status is provided
+        if (!$request->has('status')) {
+            $user->status = $user->status === 'active' ? 'inactive' : 'active';
+        } else {
+            // Set the status to the provided value
+            $user->status = $request->input('status');
+        }
+
+        // Save the updated status
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User status updated successfully.',
+            'data' => $user,
+        ]);
+    }
+
+
+
+
 }
