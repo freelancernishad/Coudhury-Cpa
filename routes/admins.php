@@ -166,7 +166,10 @@ Route::prefix('admin')->group(function () {
         Route::put('/reassign-update/{id}', [AdminServicesController::class, 'reassignAndUpdateParent']);
     });
 
-    Route::post('services/store/temp/api', [AdminServicesController::class, 'store2']);
+
+    Route::post('services/create/under/mutiple/parent', [AdminServicesController::class, 'store2']);
+
+
 
     Route::prefix('/service-purchased')->group(function () {
         Route::get('/', [ServicePurchasedController::class, 'index']); // List all records
