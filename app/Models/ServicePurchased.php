@@ -46,38 +46,80 @@ class ServicePurchased extends Model
 
     // In App\Models\ServicePurchased
 
-// In App\Models\ServicePurchased
+    // In App\Models\ServicePurchased
 
-public static function getGroupedByStatus($userId, $status = null)
-{
-    // Fetch all ServicePurchased records for the user, excluding "pending" status
-    $query = self::where('user_id', $userId)->with('files')
-        ->where('status', '!=', 'pending') // Exclude "pending" status
-        // ->with(['user' => function ($query) {
-        //     $query->select(['id', 'name', 'client_id', 'email', 'phone']);
-        // }])
-        ->latest();
+    public static function getGroupedByStatus($userId, $status = null)
+    {
+        // Fetch all ServicePurchased records for the user, excluding "pending" status
+        $query = self::where('user_id', $userId)->with('files')
+            ->where('status', '!=', 'pending') // Exclude "pending" status
+            // ->with(['user' => function ($query) {
+            //     $query->select(['id', 'name', 'client_id', 'email', 'phone']);
+            // }])
+            ->latest();
 
-    // Apply status filter if provided
-    if ($status) {
-        $query->where('status', $status);
+        // Apply status filter if provided
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        // Get the results
+        $servicePurchasedList = $query->get();
+
+        // Group records by status if no specific status is provided
+        if (!$status) {
+            $grouped = [
+                'in_review' => $servicePurchasedList->where('status', 'In Review')->values(),
+                'others' => $servicePurchasedList->where('status', '!=', 'In Review')->values(),
+            ];
+            return $grouped;
+        }
+
+        // Return filtered results if a specific status is provided
+        return $servicePurchasedList;
     }
 
-    // Get the results
-    $servicePurchasedList = $query->get();
 
-    // Group records by status if no specific status is provided
-    if (!$status) {
-        $grouped = [
-            'in_review' => $servicePurchasedList->where('status', 'In Review')->values(),
-            'others' => $servicePurchasedList->where('status', '!=', 'In Review')->values(),
+    protected $hidden = ['service_details'];
+    protected $appends = ['formatted_service_details'];
+
+    public function getFormattedServiceDetailsAttribute()
+    {
+        // Get the service_details array
+        $serviceDetails = $this->service_details;
+
+        // Initialize the result array
+        $formattedDetails = [
+            'selected_services' => [],
+            'addons' => [],
         ];
-        return $grouped;
+
+        // Extract names from selected_services
+        if (isset($serviceDetails['selected_services'])) {
+            foreach ($serviceDetails['selected_services'] as $selectedService) {
+                $formattedDetails['selected_services'][] = $selectedService['name'];
+            }
+        }
+
+        // Extract names from addons => selectedServices
+        if (isset($serviceDetails['addons'])) {
+            foreach ($serviceDetails['addons'] as $addon) {
+                $addonServices = [];
+                if (isset($addon['selectedServices'])) {
+                    foreach ($addon['selectedServices'] as $selectedService) {
+                        $addonServices[] = $selectedService['name'];
+                    }
+                }
+                $formattedDetails['addons'][] = $addonServices;
+            }
+        }
+
+        return $formattedDetails;
     }
 
-    // Return filtered results if a specific status is provided
-    return $servicePurchasedList;
-}
+
+
+
 
     public function files()
     {
