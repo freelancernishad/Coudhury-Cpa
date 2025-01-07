@@ -184,31 +184,39 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
 
     public function getServicePurchasedListAttribute()
     {
-        $servicePurchased = $this->servicePurchased()->select('service_details')->get();
+        // Fetch the latest servicePurchased entry
+        $servicePurchased = $this->servicePurchased()->select('service_details')->latest()->first();
 
-        $result = [];
+        // If no servicePurchased entry exists, return an empty array
+        if (!$servicePurchased) {
+            return [];
+        }
 
-        foreach ($servicePurchased as $service) {
-            $serviceDetails = $service->service_details;
+        // Decode the service_details JSON (if it's stored as JSON)
+        $serviceDetails = $servicePurchased->service_details;
 
-            $names = [];
+        // Initialize an array to store the names
+        $names = [];
 
-            // Extract names from selected_services
+        // Extract names from selected_services
+        if (isset($serviceDetails['selected_services'])) {
             foreach ($serviceDetails['selected_services'] as $selectedService) {
                 $names[] = $selectedService['name'];
             }
-
-            // Extract names from addons => selectedServices
-            foreach ($serviceDetails['addons'] as $addon) {
-                foreach ($addon['selectedServices'] as $selectedService) {
-                    $names[] = $selectedService['name'];
-                }
-            }
-
-            $result[] = $names;
         }
 
-        return $result;
+        // Extract names from addons => selectedServices
+        if (isset($serviceDetails['addons'])) {
+            foreach ($serviceDetails['addons'] as $addon) {
+                if (isset($addon['selectedServices'])) {
+                    foreach ($addon['selectedServices'] as $selectedService) {
+                        $names[] = $selectedService['name'];
+                    }
+                }
+            }
+        }
+
+        return $names;
     }
 
     protected $appends = ['last_payment_date', 'last_payment_amount','total_due','service_purchased_list'];
