@@ -30,6 +30,8 @@ class ServicePurchasedController extends Controller
         // Apply filters
         if ($status) {
             $query->where('status', $status);
+        }else{
+            $query->where('status', '!=', 'pending');
         }
         if ($userId) {
             $query->where('user_id', $userId);
