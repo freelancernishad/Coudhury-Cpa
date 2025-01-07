@@ -49,6 +49,65 @@ class AdminServicesController extends Controller
         return response()->json($service, 201);
     }
 
+
+    public function store2(Request $request)
+{
+    // Validate the request
+    $validator = Validator::make($request->all(), [
+        'name' => 'required|string|max:255',
+        'parent_id' => 'nullable|array', // Allow parent_id to be an array
+        'parent_id.*' => 'nullable|exists:services,id', // Validate each parent_id in the array
+        'input_label' => 'nullable|string|max:255',
+        'price' => 'nullable|numeric|min:0',
+        'is_select_multiple_child' => 'nullable',
+        'is_add_on' => 'nullable',
+        'is_state_select' => 'nullable',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Validation error',
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    // Get the parent_ids from the request
+    $parentIds = $request->input('parent_id', []);
+
+    // If no parent_ids are provided, create a single service
+    if (empty($parentIds)) {
+        $service = Service::create($request->only([
+            'name', 'slug', 'input_label', 'price',
+            'is_select_multiple_child', 'is_add_on', 'is_state_select'
+        ]));
+        return response()->json($service, 201);
+    }
+
+    // Create a service for each parent_id
+    $createdServices = [];
+    foreach ($parentIds as $parentId) {
+        $service = Service::create([
+            'name' => $request->input('name'),
+            'parent_id' => $parentId,
+            'input_label' => $request->input('input_label'),
+            'price' => $request->input('price'),
+            'is_select_multiple_child' => $request->input('is_select_multiple_child'),
+            'is_add_on' => $request->input('is_add_on'),
+            'is_state_select' => $request->input('is_state_select'),
+        ]);
+        $createdServices[] = $service;
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Services created successfully.',
+        'data' => $createdServices,
+    ], 201);
+}
+
+
+
     /**
      * Display the specified service with its children.
      */
