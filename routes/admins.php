@@ -66,8 +66,12 @@ Route::prefix('admin')->group(function () {
         });
 
         Route::prefix('transitions')->group(function () {
+
             Route::get('/transaction-history', [AdminPaymentController::class, 'getAllTransactionHistory'])
                 ->name('admin.transitions.transaction-history');
+
+            Route::get('/transaction-single/{id}', [AdminPaymentController::class, 'getTransactionById']);
+
         });
 
 

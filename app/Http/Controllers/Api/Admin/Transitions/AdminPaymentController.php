@@ -107,4 +107,38 @@ class AdminPaymentController extends Controller
 
         return response()->json($transactions);
     }
+
+
+    public function getTransactionById(Request $request, $id)
+    {
+        // Find the payment by ID
+        $payment = Payment::with(['user', 'payable'])
+            ->find($id);
+
+        // Check if the payment exists
+        if (!$payment) {
+            return response()->json(['error' => 'Transaction not found'], 404);
+        }
+
+        // Transform the response
+        $servicePurchased = $payment->payable;
+
+        $response = [
+            'id' => $payment->id,
+            'transaction_id' => $payment->transaction_id,
+            'client_id' => $payment->user->client_id,
+            'name' => $payment->user->name,
+            'email' => $payment->user->email,
+            'profile_picture' => $payment->user->profile_picture,
+            'amount' => $payment->amount,
+            'paid_at' => $payment->paid_at,
+            'event' => $payment->event,
+            'status' => $payment->status,
+            'due_amount' => $servicePurchased ? $servicePurchased->due_amount : 0, // Add due_amount at root level
+            'service_details' => $servicePurchased ? $servicePurchased->formatted_service_details : 0, // Add service_details at root level
+        ];
+
+        return response()->json($response);
+    }
+
 }

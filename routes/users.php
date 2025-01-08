@@ -79,6 +79,8 @@ Route::prefix('user')->group(function () {
         Route::prefix('billings')->group(function () {
             Route::get('/billing-history', [AdminPaymentController::class, 'getAllTransactionHistory'])
                 ->name('user.transitions.transaction-history');
+
+            Route::get('/billing-single/{id}', [AdminPaymentController::class, 'getTransactionById']);
         });
 
 
