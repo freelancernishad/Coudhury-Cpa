@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\Api\Admin\ServicePurchased;
 
-use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use App\Models\ServicePurchased;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 
 class ServicePurchasedController extends Controller
 {
@@ -20,7 +21,6 @@ class ServicePurchasedController extends Controller
         // Pagination and filters
         $perPage = $request->query('per_page', 10); // Default to 10 records per page
         $status = $request->query('status'); // Filter by status (e.g., 'pending', 'completed', 'failed')
-        $userId = $request->query('user_id'); // Filter by user ID
         $search = $request->query('search'); // Global search term
 
         // Query builder
@@ -33,9 +33,18 @@ class ServicePurchasedController extends Controller
         }else{
             $query->where('status', '!=', 'pending');
         }
-        if ($userId) {
-            $query->where('user_id', $userId);
-        }
+
+    // Handle user_id based on the guard
+    if (Auth::guard('user')->check()) {
+        // If the guard is 'user', get the user_id from the authenticated user
+        $query->where('user_id', Auth::guard('user')->id());
+    } elseif ($request->has('user_id')) {
+        // For other guards, get the user_id from the request
+        $query->where('user_id', $request->query('user_id'));
+    }
+
+
+
 
         // Apply global search
         if ($search) {

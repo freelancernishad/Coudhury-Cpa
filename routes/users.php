@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\User\UserManagement\UserProfileController;
 use App\Http\Controllers\Api\User\Package\UserPurchasedHistoryController;
 use App\Http\Controllers\Api\User\SupportTicket\SupportTicketApiController;
 use App\Http\Controllers\Api\User\SocialMedia\UserSocialMediaLinkController;
+use App\Http\Controllers\Api\Admin\ServicePurchased\ServicePurchasedController;
 use App\Http\Controllers\Api\Admin\SupportTicket\AdminSupportTicketApiController;
 use App\Http\Controllers\Api\User\ServicePurchased\UserServicePurchasedController;
 use App\Http\Controllers\Api\Admin\ServicePurchased\ServicePurchasedFileController;
@@ -67,6 +68,13 @@ Route::prefix('user')->group(function () {
 
 
         Route::post('service-purchased/checkout', [UserServicePurchasedController::class, 'createStripeCheckoutSession']);
+
+        Route::prefix('/service-purchased')->group(function () {
+            Route::get('/', [ServicePurchasedController::class, 'index']); // List all records
+            Route::get('/{id}', [ServicePurchasedController::class, 'show']); // View a single record
+
+        });
+
 
         Route::prefix('billings')->group(function () {
             Route::get('/billing-history', [AdminPaymentController::class, 'getAllTransactionHistory'])
