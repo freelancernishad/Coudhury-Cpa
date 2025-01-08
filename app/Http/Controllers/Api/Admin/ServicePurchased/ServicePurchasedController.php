@@ -34,14 +34,14 @@ class ServicePurchasedController extends Controller
             $query->where('status', '!=', 'pending');
         }
 
-    // Handle user_id based on the guard
-    if (Auth::guard('user')->check()) {
-        // If the guard is 'user', get the user_id from the authenticated user
-        $query->where('user_id', Auth::guard('user')->id());
-    } elseif ($request->has('user_id')) {
-        // For other guards, get the user_id from the request
-        $query->where('user_id', $request->query('user_id'));
-    }
+        // Handle user_id based on the guard
+        if (Auth::guard('user')->check()) {
+            // If the guard is 'user', get the user_id from the authenticated user
+            $query->where('user_id', Auth::guard('user')->id());
+        } elseif ($request->has('user_id')) {
+            // For other guards, get the user_id from the request
+            $query->where('user_id', $request->query('user_id'));
+        }
 
 
 

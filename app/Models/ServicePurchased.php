@@ -120,10 +120,10 @@ class ServicePurchased extends Model
 
 
 
-
     public function files()
     {
-        return $this->hasMany(ServicePurchasedFile::class);
+        return $this->hasMany(ServicePurchasedFile::class)
+            ->select('file_name', 'file_path', 'file_size', 'service_purchased_id');
     }
 
 }
