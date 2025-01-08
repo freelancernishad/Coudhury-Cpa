@@ -81,7 +81,7 @@ class ServicePurchasedFileController extends Controller
     {
         // Validate the request
         $validator = Validator::make($request->all(), [
-            'user_id' => 'required|exists:users,id', // user_id is required
+            'user_id' => 'nullable|exists:users,id', // user_id is optional
             'folder_name' => 'nullable|string', // folder_name is optional
             'year' => 'nullable|integer|min:2000|max:2100', // year is optional
             'month' => 'nullable|integer|min:1|max:12', // month is optional
@@ -91,8 +91,19 @@ class ServicePurchasedFileController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
+        // Get the authenticated user's ID based on the guard
+        if (Auth::guard('admin')->check()) {
+            // If the user is an admin, allow them to specify a user_id in the request
+            $userId = $request->input('user_id') ?? Auth::guard('admin')->user()->id;
+        } elseif (Auth::guard('web')->check()) {
+            // If the user is a regular user, use their authenticated user_id
+            $userId = Auth::guard('web')->user()->id;
+        } else {
+            // If no authenticated user, return an error
+            return response()->json(['error' => 'Unauthenticated.'], 401);
+        }
+
         // Extract validated data
-        $userId = $request->input('user_id');
         $folderName = $request->input('folder_name');
         $year = $request->input('year');
         $month = $request->input('month');
@@ -100,7 +111,7 @@ class ServicePurchasedFileController extends Controller
         // Initialize the query
         $query = ServicePurchasedFile::query();
 
-        // Filter by user_id (required)
+        // Filter by user_id
         $query->where('user_id', $userId);
 
         // Filter by folder_name (if provided)
@@ -127,7 +138,13 @@ class ServicePurchasedFileController extends Controller
         // Case 1: Only folder_name is provided
         if ($folderName && !$year && !$month) {
             // Group by year
-            $years = $files->groupBy('year')->keys();
+            $years = $files->groupBy('year')->map(function ($yearFiles, $year) {
+                return [
+                    'year' => $year,
+                    'file_counts' => $this->getMeaningfulFileCounts($yearFiles),
+                    'total_files' => $yearFiles->count(),
+                ];
+            })->values();
 
             $response = [
                 'folder_name' => $folderName,
@@ -137,7 +154,13 @@ class ServicePurchasedFileController extends Controller
         // Case 2: folder_name and year are provided
         elseif ($folderName && $year && !$month) {
             // Group by month
-            $months = $files->groupBy('month')->keys();
+            $months = $files->groupBy('month')->map(function ($monthFiles, $month) {
+                return [
+                    'month' => $month,
+                    'file_counts' => $this->getMeaningfulFileCounts($monthFiles),
+                    'total_files' => $monthFiles->count(),
+                ];
+            })->values();
 
             $response = [
                 'folder_name' => $folderName,
@@ -170,19 +193,100 @@ class ServicePurchasedFileController extends Controller
                 'files' => $files,
             ];
         }
-        // Case 4: No folder_name, year, or month provided
+        // Case 4: No folder_name, year, or month provided (only user_id)
         else {
-            // Return all folders for the user
-            $folders = $files->groupBy('folder_name')->keys();
-
-            $response = [
-                'folders' => $folders,
+            // Default folders
+            $defaultFolders = [
+                'Uploaded Documents by CPA Admin',
+                'Uploaded Documents by Client',
             ];
+
+            // Prepare the response structure
+            $response = [
+                'folders' => [],
+            ];
+
+            foreach ($defaultFolders as $folder) {
+                // Filter files for the current folder
+                $folderFiles = $files->where('folder_name', $folder);
+
+                // Add folder details to the response
+                $response['folders'][] = [
+                    'folder_name' => $folder,
+                    'file_counts' => $this->getMeaningfulFileCounts($folderFiles),
+                    'total_files' => $folderFiles->count(),
+                ];
+            }
+
+            // Add year list
+            $years = $files->groupBy('year')->map(function ($yearFiles, $year) {
+                return [
+                    'year' => $year,
+                    'file_counts' => $this->getMeaningfulFileCounts($yearFiles),
+                    'total_files' => $yearFiles->count(),
+                ];
+            })->values();
+
+            $response['years'] = $years;
+
+            // Add month list
+            $months = $files->groupBy('month')->map(function ($monthFiles, $month) {
+                return [
+                    'month' => $month,
+                    'file_counts' => $this->getMeaningfulFileCounts($monthFiles),
+                    'total_files' => $monthFiles->count(),
+                ];
+            })->values();
+
+            $response['months'] = $months;
         }
 
         return response()->json($response);
     }
 
+    /**
+     * Generate meaningful file counts grouped by file type.
+     *
+     * @param \Illuminate\Support\Collection $files
+     * @return array
+     */
+    protected function getMeaningfulFileCounts($files)
+    {
+        // Map file extensions to their corresponding file types
+        $fileTypeMap = [
+            'png' => 'images',
+            'jpg' => 'images',
+            'jpeg' => 'images',
+            'gif' => 'images',
+            'pdf' => 'PDF files',
+            'doc' => 'Word files',
+            'docx' => 'Word files',
+            'xls' => 'Excel files',
+            'xlsx' => 'Excel files',
+            'txt' => 'text files',
+            'zip' => 'ZIP files',
+            // Add more mappings as needed
+        ];
+
+        // Group files by their type and count them
+        $fileCounts = [];
+        foreach ($files as $file) {
+            $extension = strtolower($file->file_extension);
+            $fileType = $fileTypeMap[$extension] ?? 'other files'; // Default to 'other files' if extension is not mapped
+            if (!isset($fileCounts[$fileType])) {
+                $fileCounts[$fileType] = 0;
+            }
+            $fileCounts[$fileType]++;
+        }
+
+        // Generate meaningful messages
+        $meaningfulMessages = [];
+        foreach ($fileCounts as $fileType => $count) {
+            $meaningfulMessages[] = "$count $fileType";
+        }
+
+        return $meaningfulMessages;
+    }
 
     /**
      * Get the latest upload timestamp grouped by user_id and service_purchased_id.

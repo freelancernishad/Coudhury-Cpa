@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\User\SupportTicket\SupportTicketApiController;
 use App\Http\Controllers\Api\User\SocialMedia\UserSocialMediaLinkController;
 use App\Http\Controllers\Api\Admin\SupportTicket\AdminSupportTicketApiController;
 use App\Http\Controllers\Api\User\ServicePurchased\UserServicePurchasedController;
+use App\Http\Controllers\Api\Admin\ServicePurchased\ServicePurchasedFileController;
 
 
 
@@ -67,7 +68,7 @@ Route::prefix('user')->group(function () {
         Route::post('service-purchased/checkout', [UserServicePurchasedController::class, 'createStripeCheckoutSession']);
 
 
-
+        Route::get('/documents', [ServicePurchasedFileController::class, 'getFilesGroupedByFolder']);
 
 
 
