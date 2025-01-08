@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers\Api\Admin\Transitions;
 
-use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 
 class AdminPaymentController extends Controller
 {
@@ -23,7 +24,7 @@ class AdminPaymentController extends Controller
         if ($request->has('status')) {
             $query->where('status', $request->input('status'));
         } else {
-            $query->where('status', 'completed'); 
+            $query->where('status', 'completed');
         }
 
         // Filter by gateway if provided
@@ -42,8 +43,12 @@ class AdminPaymentController extends Controller
             $query->where('coupon_id', $request->input('coupon_id'));
         }
 
-        // Filter by user if provided
-        if ($request->has('user_id')) {
+        // Handle user_id based on the guard
+        if (Auth::guard('user')->check()) {
+            // If the guard is 'user', get the user_id from the authenticated user
+            $query->where('user_id', Auth::guard('user')->id());
+        } elseif ($request->has('user_id')) {
+            // For other guards, get the user_id from the request
             $query->where('user_id', $request->input('user_id'));
         }
 
@@ -74,11 +79,16 @@ class AdminPaymentController extends Controller
             ]);
         }]);
 
+        // Include ServicePurchased to access service_details and due_amount
+        $query->with(['payable']);
+
         // Fetch results with pagination and order by `paid_at` descending
         $transactions = $query->orderBy('paid_at', 'desc')->paginate($request->input('per_page', 15));
 
-        // Transform the response to include user data in the desired format
+        // Transform the response to include user data, due_amount, and service_details
         $transactions->getCollection()->transform(function ($payment) {
+            $servicePurchased = $payment->payable;
+
             return [
                 'id' => $payment->id,
                 'transaction_id' => $payment->transaction_id,
@@ -90,6 +100,8 @@ class AdminPaymentController extends Controller
                 'paid_at' => $payment->paid_at,
                 'event' => $payment->event,
                 'status' => $payment->status,
+                'due_amount' => $servicePurchased ? $servicePurchased->due_amount : 0, // Add due_amount at root level
+                'service_details' => $servicePurchased ? $servicePurchased->formatted_service_details : 0, // Add service_details at root level
             ];
         });
 

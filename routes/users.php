@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\Auth\User\VerificationController;
 use App\Http\Controllers\Api\Admin\Chat\AdminChatApiController;
 use App\Http\Controllers\Api\User\Package\UserPackageController;
 use App\Http\Controllers\Api\Auth\User\UserPasswordResetController;
+use App\Http\Controllers\Api\Admin\Transitions\AdminPaymentController;
 use App\Http\Controllers\Api\User\UserManagement\UserProfileController;
 use App\Http\Controllers\Api\User\Package\UserPurchasedHistoryController;
 use App\Http\Controllers\Api\User\SupportTicket\SupportTicketApiController;
@@ -66,6 +67,11 @@ Route::prefix('user')->group(function () {
 
 
         Route::post('service-purchased/checkout', [UserServicePurchasedController::class, 'createStripeCheckoutSession']);
+
+        Route::prefix('billings')->group(function () {
+            Route::get('/billing-history', [AdminPaymentController::class, 'getAllTransactionHistory'])
+                ->name('user.transitions.transaction-history');
+        });
 
 
         Route::get('/documents', [ServicePurchasedFileController::class, 'getFilesGroupedByFolder']);
