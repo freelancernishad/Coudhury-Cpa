@@ -84,21 +84,21 @@ class UserController extends Controller
     }
 
 
-    public function show(User $user, Request $request)
+    public function show(Request $request,$id)
     {
         // Get the status from the request parameters
         $status = $request->query('status');
 
         // Get the user details
         // $userDetails = $user->only(['id', 'name', 'client_id', 'email', 'phone']);
-        $userDetails = $user;
+        $user = User::where('client_id',$id)->first();
 
         // Get ServicePurchased lists based on the status
         $servicePurchasedLists = ServicePurchased::getGroupedByStatus($user->id, $status);
 
         // Combine user details and ServicePurchased lists
         $response = [
-            'user' => $userDetails,
+            'user' => $user,
             'service_purchased' => $servicePurchasedLists,
         ];
 

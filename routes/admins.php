@@ -52,7 +52,7 @@ Route::prefix('admin')->group(function () {
         Route::prefix('users')->group(function () {
             Route::get('/', [UserController::class, 'index']);          // List users
             Route::post('/', [UserController::class, 'store']);         // Create user
-            Route::get('/{user}', [UserController::class, 'show']);     // Show user details
+            Route::get('/{id}', [UserController::class, 'show']);     // Show user details
             Route::put('/{user}', [UserController::class, 'update']);   // Update user
             Route::delete('/{user}', [UserController::class, 'destroy']); // Delete user
             Route::post('{user}/toggle-status', [UserController::class, 'toggleStatus']);
