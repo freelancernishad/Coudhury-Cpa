@@ -161,8 +161,12 @@ function createStripeCheckoutSession(array $data): JsonResponse
         }
 
         // Update the payment with the transaction ID (Stripe session ID)
-        $payment->update(['transaction_id' => $session->id]);
-
+        // $payment->update(['transaction_id' => $session->id]);
+        // Update the payment with the transaction ID and Stripe session ID
+        $payment->update([
+            'transaction_id' => uniqid(),
+            'stripe_session' => $session->id, // Add this line
+        ]);
         return response()->json(['session_url' => $session->url]);
     } catch (\Exception $e) {
         return response()->json(['error' => $e->getMessage()], 500);
