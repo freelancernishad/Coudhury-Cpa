@@ -5,6 +5,7 @@ use App\Models\Package;
 use App\Models\Payment;
 use App\Models\PackageAddon;
 use Stripe\Checkout\Session;
+use App\Models\StripeCustomer;
 use App\Models\UserPackageAddon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
