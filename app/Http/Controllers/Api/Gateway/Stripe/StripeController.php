@@ -78,9 +78,10 @@ class StripeController extends Controller
                     // Retrieve the PaymentIntent associated with the session
                     $paymentIntent = \Stripe\PaymentIntent::retrieve($session->payment_intent);
 
+                    Log::info($paymentIntent);
                     // Extract payment method details
                     $paymentMethod = \Stripe\PaymentMethod::retrieve($paymentIntent->payment_method);
-
+                    Log::info($paymentMethod);
                     // Extract card or bank details
                     $paymentMethodDetails = [];
                     if ($paymentMethod->type === 'card') {
