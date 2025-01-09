@@ -117,8 +117,8 @@ class StripeController extends Controller
 
 
                                 // Update the paid_amount and due_amount
-                                $servicePurchased->paid_amount += $payment->amount;
-                                $servicePurchased->due_amount = $servicePurchased->subtotal - $servicePurchased->paid_amount;
+                                $servicePurchased->paid_amount = $payment->amount;
+                                $servicePurchased->due_amount = $servicePurchased->subtotal -  $servicePurchased->paid_amount;
 
                                 // Update status based on due_amount
                                 if ($servicePurchased->due_amount <= 0) {
