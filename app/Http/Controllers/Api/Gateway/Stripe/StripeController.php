@@ -74,7 +74,7 @@ class StripeController extends Controller
             switch ($event->type) {
                 case 'checkout.session.completed':
                     $session = $event->data->object; // Contains \Stripe\Checkout\Session
-
+                    Log::info($session);
                     // Retrieve the PaymentIntent associated with the session
                     $paymentIntent = \Stripe\PaymentIntent::retrieve($session->payment_intent);
 
