@@ -122,7 +122,7 @@ class StripeController extends Controller
 
                                 // Update status based on due_amount
                                 if ($servicePurchased->due_amount <= 0) {
-                                    $servicePurchased->status = 'In review';
+                                    $servicePurchased->status = 'In Review';
                                 } else {
                                     $servicePurchased->status = 'partially_paid';
                                 }
