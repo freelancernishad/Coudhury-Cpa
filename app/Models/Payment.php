@@ -20,6 +20,36 @@ class Payment extends Model
         'payment_method_details' => 'object', // Cast to array
     ];
 
+
+    /**
+     * Accessor for payment_method_details.
+     * Ensures the value is always returned as an object.
+     *
+     * @param mixed $value
+     * @return object
+     */
+    public function getPaymentMethodDetailsAttribute($value)
+    {
+        // If the value is already an object, return it as is
+        if (is_object($value)) {
+            return $value;
+        }
+
+        // If the value is a JSON string, decode it into an object
+        if (is_string($value)) {
+            return json_decode($value);
+        }
+
+        // If the value is an array, convert it to an object
+        if (is_array($value)) {
+            return (object) $value;
+        }
+
+        // Fallback: return an empty object
+        return (object) [];
+    }
+
+
     // Define relationship with User model
     public function user()
     {
