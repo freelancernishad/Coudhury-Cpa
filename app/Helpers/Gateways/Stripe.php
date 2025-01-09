@@ -61,6 +61,32 @@ function createStripeCheckoutSession(array $data): JsonResponse
         $successUrl = "{$baseSuccessUrl}?payment_id={$payment->id}&session_id={CHECKOUT_SESSION_ID}";
         $cancelUrl = "{$baseCancelUrl}?payment_id={$payment->id}&session_id={CHECKOUT_SESSION_ID}";
 
+        // Check if the user already has a Stripe Customer ID
+        $stripeCustomerId = null;
+        $stripeCustomer = StripeCustomer::where('user_id', $userId)->first();
+
+        if ($stripeCustomer) {
+            // Use existing Stripe Customer ID
+            $stripeCustomerId = $stripeCustomer->stripe_customer_id;
+        } else {
+            // Create a new Stripe Customer
+            $customer = \Stripe\Customer::create([
+                'email' => auth()->user()->email, // Use the authenticated user's email
+                'name' => auth()->user()->name, // Use the authenticated user's name
+                'metadata' => [
+                    'user_id' => $userId, // Store your internal user ID in metadata
+                ],
+            ]);
+
+            // Save the Stripe Customer ID to your database
+            StripeCustomer::create([
+                'user_id' => $userId,
+                'stripe_customer_id' => $customer->id,
+            ]);
+
+            $stripeCustomerId = $customer->id;
+        }
+
         // Product details
         $productName = 'Payment';
         $lineItems = [];
@@ -130,6 +156,7 @@ function createStripeCheckoutSession(array $data): JsonResponse
                 'mode' => 'payment',
                 'success_url' => $successUrl,
                 'cancel_url' => $cancelUrl,
+                'customer' => $stripeCustomerId, // Associate the session with the Stripe Customer
             ]);
         } else {
             // Recurring payment (monthly or yearly)
@@ -157,16 +184,16 @@ function createStripeCheckoutSession(array $data): JsonResponse
                 'mode' => 'subscription',
                 'success_url' => $successUrl,
                 'cancel_url' => $cancelUrl,
+                'customer' => $stripeCustomerId, // Associate the session with the Stripe Customer
             ]);
         }
 
-        // Update the payment with the transaction ID (Stripe session ID)
-        // $payment->update(['transaction_id' => $session->id]);
         // Update the payment with the transaction ID and Stripe session ID
         $payment->update([
             'transaction_id' => uniqid(),
             'stripe_session' => $session->id, // Add this line
         ]);
+
         return response()->json(['session_url' => $session->url]);
     } catch (\Exception $e) {
         return response()->json(['error' => $e->getMessage()], 500);
