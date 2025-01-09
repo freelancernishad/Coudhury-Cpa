@@ -143,9 +143,12 @@ class StripeController extends Controller
                                 $servicePurchased->save();
                             }
                         }
+                        Log::info($payment->payable_type);
 
                         // Check if payable type is "Package" and call PackageSubscribe
                         if ($payment->payable_type === 'Package') {
+                            Log::info("Package".$payment->payable_type);
+
                             PackageSubscribe($payment->payable_id, $payment->user_id);
                         }
                     }
