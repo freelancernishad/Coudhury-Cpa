@@ -9,6 +9,7 @@ use Stripe\PaymentIntent;
 use Illuminate\Http\Request;
 use Stripe\Checkout\Session;
 use App\Models\ServicePurchased;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 
@@ -72,6 +73,33 @@ class StripeController extends Controller
                 case 'checkout.session.completed':
                     $session = $event->data->object; // Contains \Stripe\Checkout\Session
 
+                    // Retrieve the PaymentIntent associated with the session
+                    $paymentIntent = \Stripe\PaymentIntent::retrieve($session->payment_intent);
+
+                    // Extract payment method details
+                    $paymentMethod = \Stripe\PaymentMethod::retrieve($paymentIntent->payment_method);
+
+                    // Extract card or bank details
+                    $paymentMethodDetails = [];
+                    if ($paymentMethod->type === 'card') {
+                        $paymentMethodDetails = [
+                            'type' => 'card',
+                            'brand' => $paymentMethod->card->brand,
+                            'last4' => $paymentMethod->card->last4,
+                            'exp_month' => $paymentMethod->card->exp_month,
+                            'exp_year' => $paymentMethod->card->exp_year,
+                        ];
+                    } elseif ($paymentMethod->type === 'bank_account') {
+                        $paymentMethodDetails = [
+                            'type' => 'bank_account',
+                            'bank_name' => $paymentMethod->bank_account->bank_name,
+                            'last4' => $paymentMethod->bank_account->last4,
+                            'routing_number' => $paymentMethod->bank_account->routing_number,
+                        ];
+                    }
+
+                    Log::info(json_encode($paymentMethodDetails));
+                    Log::info($paymentMethodDetails);
                     // Find the payment record and update status
                     $payment = Payment::where('stripe_session', $session->id)->first();
                     if ($payment) {
@@ -79,6 +107,7 @@ class StripeController extends Controller
                             'status' => 'completed',
                             'paid_at' => now(),
                             'response_data' => json_encode($session),
+                            // 'payment_method_details' => json_encode($paymentMethodDetails), // Store payment method details
                         ]);
 
                         // Check if payable type is "ServicePurchased" and update the ServicePurchased record
@@ -110,11 +139,35 @@ class StripeController extends Controller
                 case 'payment_intent.succeeded':
                     // Handle successful payment
                     $paymentIntent = $event->data->object; // Contains \Stripe\PaymentIntent
+
+                    // Extract payment method details
+                    $paymentMethod = \Stripe\PaymentMethod::retrieve($paymentIntent->payment_method);
+
+                    // Extract card or bank details
+                    $paymentMethodDetails = [];
+                    if ($paymentMethod->type === 'card') {
+                        $paymentMethodDetails = [
+                            'type' => 'card',
+                            'brand' => $paymentMethod->card->brand,
+                            'last4' => $paymentMethod->card->last4,
+                            'exp_month' => $paymentMethod->card->exp_month,
+                            'exp_year' => $paymentMethod->card->exp_year,
+                        ];
+                    } elseif ($paymentMethod->type === 'bank_account') {
+                        $paymentMethodDetails = [
+                            'type' => 'bank_account',
+                            'bank_name' => $paymentMethod->bank_account->bank_name,
+                            'last4' => $paymentMethod->bank_account->last4,
+                            'routing_number' => $paymentMethod->bank_account->routing_number,
+                        ];
+                    }
+
                     $payment = Payment::where('transaction_id', $paymentIntent->id)->first();
                     if ($payment) {
                         $payment->update([
                             'status' => 'completed',
                             'paid_at' => now(),
+                            'payment_method_details' => json_encode($paymentMethodDetails), // Store payment method details
                         ]);
 
                         // Check if payable type is "ServicePurchased" and update the ServicePurchased record
