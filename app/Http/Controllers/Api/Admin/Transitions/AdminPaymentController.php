@@ -122,6 +122,11 @@ class AdminPaymentController extends Controller
 
         // Transform the response
         $servicePurchased = $payment->payable;
+        // Check if payment_method_details is a string and decode it if necessary
+        $paymentMethodDetails = $payment->payment_method_details;
+        if (is_string($paymentMethodDetails)) {
+            $paymentMethodDetails = json_decode($paymentMethodDetails);
+        }
 
         $response = [
             'id' => $payment->id,
@@ -134,7 +139,7 @@ class AdminPaymentController extends Controller
             'paid_at' => $payment->paid_at,
             'event' => $payment->event,
             'status' => $payment->status,
-            'payment_method_details' => json_decode($payment->payment_method_details),
+            'payment_method_details' => $paymentMethodDetails,,
             'due_amount' => $servicePurchased ? $servicePurchased->due_amount : 0, // Add due_amount at root level
             'service_details' => $servicePurchased ? $servicePurchased->formatted_service_details : 0, // Add service_details at root level
         ];
