@@ -134,6 +134,7 @@ class AdminPaymentController extends Controller
             'paid_at' => $payment->paid_at,
             'event' => $payment->event,
             'status' => $payment->status,
+            'payment_method_details' => $payment->payment_method_details,
             'due_amount' => $servicePurchased ? $servicePurchased->due_amount : 0, // Add due_amount at root level
             'service_details' => $servicePurchased ? $servicePurchased->formatted_service_details : 0, // Add service_details at root level
         ];
