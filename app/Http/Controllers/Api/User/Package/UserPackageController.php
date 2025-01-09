@@ -80,6 +80,7 @@ class UserPackageController extends Controller
         $discountMonths = $request->discount_months ?? 0; // Default to 0 if no discount months are provided
         $successUrl = $request->success_url ?? 'http://localhost:8000/stripe/payment/success';
         $cancelUrl = $request->cancel_url ?? 'http://localhost:8000/stripe/payment/cancel';
+        $billing_interval = $request->billing_interval ?? 'one_time';
 
         // Retrieve package and ensure it's valid
         $package = Package::find($payableId);
@@ -107,6 +108,7 @@ class UserPackageController extends Controller
                 'coupon_id' => $couponId, // Pass coupon_id here
                 'success_url' => $successUrl,
                 'cancel_url' => $cancelUrl,
+                'billing_interval' => $billing_interval,
             ]);
 
             // Return success response

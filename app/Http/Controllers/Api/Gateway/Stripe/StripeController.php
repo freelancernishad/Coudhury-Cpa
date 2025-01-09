@@ -8,7 +8,9 @@ use App\Models\Payment;
 use Stripe\PaymentIntent;
 use Illuminate\Http\Request;
 use Stripe\Checkout\Session;
+use App\Models\StripeCustomer;
 use App\Models\ServicePurchased;
+use App\Models\StripePaymentMethod;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
@@ -98,7 +100,6 @@ class StripeController extends Controller
                         ];
                     }
 
-
                     // Find the payment record and update status
                     $payment = Payment::where('stripe_session', $session->id)->first();
                     if ($payment) {
@@ -109,16 +110,29 @@ class StripeController extends Controller
                             'payment_method_details' => json_encode($paymentMethodDetails), // Store payment method details
                         ]);
 
+                        // Save Stripe customer and payment method details
+                        $stripeCustomer = StripeCustomer::updateOrCreate(
+                            ['user_id' => $payment->user_id], // Match by user ID
+                            ['stripe_customer_id' => $paymentIntent->customer]
+                        );
+
+                        // Save the payment method
+                        StripePaymentMethod::updateOrCreate(
+                            ['stripe_payment_method_id' => $paymentMethod->id], // Match by payment method ID
+                            [
+                                'stripe_customer_id' => $stripeCustomer->id,
+                                'details' => $paymentMethodDetails,
+                                'is_default' => false, // Mark as non-default (you can set logic for default)
+                            ]
+                        );
+
                         // Check if payable type is "ServicePurchased" and update the ServicePurchased record
                         if ($payment->payable_type === ServicePurchased::class) {
                             $servicePurchased = ServicePurchased::find($payment->payable_id);
                             if ($servicePurchased && $servicePurchased->status === 'pending') {
-
-
-
                                 // Update the paid_amount and due_amount
                                 $servicePurchased->paid_amount = $payment->amount;
-                                $servicePurchased->due_amount = $servicePurchased->subtotal -  $servicePurchased->paid_amount;
+                                $servicePurchased->due_amount = $servicePurchased->subtotal - $servicePurchased->paid_amount;
 
                                 // Update status based on due_amount
                                 if ($servicePurchased->due_amount <= 0) {
@@ -127,9 +141,6 @@ class StripeController extends Controller
                                     $servicePurchased->status = 'partially_paid';
                                 }
                                 $servicePurchased->save();
-
-
-
                             }
                         }
 
@@ -173,6 +184,22 @@ class StripeController extends Controller
                             'paid_at' => now(),
                             'payment_method_details' => json_encode($paymentMethodDetails), // Store payment method details
                         ]);
+
+                        // Save Stripe customer and payment method details
+                        $stripeCustomer = StripeCustomer::updateOrCreate(
+                            ['user_id' => $payment->user_id], // Match by user ID
+                            ['stripe_customer_id' => $paymentIntent->customer]
+                        );
+
+                        // Save the payment method
+                        StripePaymentMethod::updateOrCreate(
+                            ['stripe_payment_method_id' => $paymentMethod->id], // Match by payment method ID
+                            [
+                                'stripe_customer_id' => $stripeCustomer->id,
+                                'details' => $paymentMethodDetails,
+                                'is_default' => false, // Mark as non-default (you can set logic for default)
+                            ]
+                        );
 
                         // Check if payable type is "ServicePurchased" and update the ServicePurchased record
                         if ($payment->payable_type === ServicePurchased::class) {
@@ -220,8 +247,6 @@ class StripeController extends Controller
                         }
                     }
                     break;
-
-                // Handle other events as needed
 
                 default:
                     // Unexpected event type
