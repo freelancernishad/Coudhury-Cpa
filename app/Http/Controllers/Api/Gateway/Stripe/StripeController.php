@@ -112,7 +112,10 @@ class StripeController extends Controller
                         // Check if payable type is "ServicePurchased" and update the ServicePurchased record
                         if ($payment->payable_type === ServicePurchased::class) {
                             $servicePurchased = ServicePurchased::find($payment->payable_id);
-                            if ($servicePurchased) {
+                            if ($servicePurchased && $servicePurchased->status === 'pending') {
+
+
+
                                 // Update the paid_amount and due_amount
                                 $servicePurchased->paid_amount += $payment->amount;
                                 $servicePurchased->due_amount = $servicePurchased->subtotal - $servicePurchased->paid_amount;
@@ -123,8 +126,10 @@ class StripeController extends Controller
                                 } else {
                                     $servicePurchased->status = 'partially_paid';
                                 }
-
                                 $servicePurchased->save();
+
+
+
                             }
                         }
 
