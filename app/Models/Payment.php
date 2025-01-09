@@ -11,12 +11,13 @@ class Payment extends Model
     // transaction_id, user->client_id,user->name , user-> email, amount , paid_at,status
     protected $fillable = [
         'user_id', 'gateway', 'transaction_id', 'currency', 'amount', 'fee',
-        'status', 'response_data', 'payment_method', 'payer_email', 'paid_at','coupon_id','payable_type','payable_id','user_package_id','event','stripe_session',
+        'status', 'response_data', 'payment_method', 'payer_email', 'paid_at','coupon_id','payable_type','payable_id','user_package_id','event','stripe_session','payment_method_details'
     ];
 
     protected $casts = [
         'response_data' => 'array', // Cast JSON data to an array
         'paid_at' => 'datetime', // Cast as a datetime
+        'payment_method_details' => 'object', // Cast to array
     ];
 
     // Define relationship with User model

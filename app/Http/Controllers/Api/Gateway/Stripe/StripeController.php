@@ -98,8 +98,7 @@ class StripeController extends Controller
                         ];
                     }
 
-                    Log::info(json_encode($paymentMethodDetails));
-                    Log::info($paymentMethodDetails);
+        
                     // Find the payment record and update status
                     $payment = Payment::where('stripe_session', $session->id)->first();
                     if ($payment) {
@@ -107,7 +106,7 @@ class StripeController extends Controller
                             'status' => 'completed',
                             'paid_at' => now(),
                             'response_data' => json_encode($session),
-                            // 'payment_method_details' => json_encode($paymentMethodDetails), // Store payment method details
+                            'payment_method_details' => json_encode($paymentMethodDetails), // Store payment method details
                         ]);
 
                         // Check if payable type is "ServicePurchased" and update the ServicePurchased record
