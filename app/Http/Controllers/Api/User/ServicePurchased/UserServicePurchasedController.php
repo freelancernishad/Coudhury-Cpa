@@ -150,7 +150,7 @@ class UserServicePurchasedController extends Controller
 
             // Create the Stripe Checkout session
             $session = Session::create([
-                'payment_method_types' => ['card'], // Only card for simplicity
+                'payment_method_types' => ['card', 'amazon_pay', 'us_bank_account'], // Only card for simplicity
                 'line_items' => $lineItems,
                 'mode' => 'payment',
                 'success_url' => $successUrl,
