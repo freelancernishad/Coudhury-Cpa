@@ -9,6 +9,7 @@ use App\Models\ServicePurchased;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\ServicePurchasedFile;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
@@ -81,7 +82,7 @@ class ServicePurchasedFileController extends Controller
     {
         // Validate the request
         $validator = Validator::make($request->all(), [
-            'user_id' => 'nullable|exists:users,id', // user_id is optional
+            'user_id' => 'nullable|exists:users,client_id', // user_id is optional
             'folder_name' => 'nullable|string', // folder_name is optional
             'year' => 'nullable|integer|min:2000|max:2100', // year is optional
             'month' => 'nullable|integer|min:1|max:12', // month is optional
@@ -94,10 +95,24 @@ class ServicePurchasedFileController extends Controller
         // Get the authenticated user's ID based on the guard
         if (Auth::guard('admin')->check()) {
             // If the user is an admin, allow them to specify a user_id in the request
-            $userId = $request->input('user_id') ?? Auth::guard('admin')->user()->id;
+            $client_id = $request->input('user_id') ?? '';
+
+            // Find the user by client_id
+            $user = User::where('client_id', $client_id)->first();
+
+            // Check if the user exists
+            if (!$user) {
+                return response()->json([
+                    'message' => 'User not found with the provided client_id.',
+                ], 404);
+            }
+
+            $userId = $user->id;
+
+
         } elseif (Auth::guard('web')->check()) {
             // If the user is a regular user, use their authenticated user_id
-            $userId = Auth::guard('web')->user()->client_id;
+            $userId = Auth::guard('web')->user()->id;
         } else {
             // If no authenticated user, return an error
             return response()->json(['error' => 'Unauthenticated.'], 401);
@@ -112,7 +127,7 @@ class ServicePurchasedFileController extends Controller
         $query = ServicePurchasedFile::query();
 
         // Filter by user_id
-        $query->where('client_id', $userId);
+        $query->where('user_id', $userId);
 
         // Filter by folder_name (if provided)
         if ($folderName) {
