@@ -97,7 +97,7 @@ class ServicePurchasedFileController extends Controller
             $userId = $request->input('user_id') ?? Auth::guard('admin')->user()->id;
         } elseif (Auth::guard('web')->check()) {
             // If the user is a regular user, use their authenticated user_id
-            $userId = Auth::guard('web')->user()->id;
+            $userId = Auth::guard('web')->user()->client_id;
         } else {
             // If no authenticated user, return an error
             return response()->json(['error' => 'Unauthenticated.'], 401);
@@ -112,7 +112,7 @@ class ServicePurchasedFileController extends Controller
         $query = ServicePurchasedFile::query();
 
         // Filter by user_id
-        $query->where('user_id', $userId);
+        $query->where('client_id', $userId);
 
         // Filter by folder_name (if provided)
         if ($folderName) {
