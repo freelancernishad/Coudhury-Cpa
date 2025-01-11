@@ -19,6 +19,7 @@ function createStripeCheckoutSession(array $data): JsonResponse
     $couponId = $data['coupon_id'] ?? null;
     $payableType = $data['payable_type'] ?? null;
     $payableId = $data['payable_id'] ?? null;
+    $event = $data['event'] ?? '';
     $addonIds = $data['addon_ids'] ?? [];
     $billingInterval = $data['billing_interval'] ?? 'one_time'; // Default to one-time payment
     $baseSuccessUrl = $data['success_url'] ?? 'http://localhost:8000/stripe/payment/success';
@@ -53,6 +54,7 @@ function createStripeCheckoutSession(array $data): JsonResponse
         'payable_type' => $payableType,
         'payable_id' => $payableId,
         'coupon_id' => $couponId,
+        'event' => $event,
         'billing_interval' => $billingInterval, // Store the billing interval
     ]);
 

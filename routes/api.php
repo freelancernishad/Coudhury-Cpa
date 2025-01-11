@@ -4,8 +4,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Server\ServerStatusController;
 use App\Http\Controllers\Api\User\Package\UserPackageController;
 use App\Http\Controllers\Api\Admin\Services\AdminServicesController;
-use App\Http\Controllers\Api\User\PackageAddon\UserPackageAddonController;
 use App\Http\Controllers\Api\User\UserManagement\UserProfileController;
+use App\Http\Controllers\Api\User\PackageAddon\UserPackageAddonController;
+use App\Http\Controllers\Api\User\ServicePurchased\ServicePurchasedDuePaymentController;
 
 // Load users and admins route files
 if (file_exists($userRoutes = __DIR__.'/example.php')) {
@@ -46,4 +47,17 @@ Route::prefix('global/')->group(function () {
     Route::get('package-addons/', [UserPackageAddonController::class, 'index']); // List all addons
     Route::get('package-addons/{id}', [UserPackageAddonController::class, 'show']); // Get a specific addon
     Route::get('services', [AdminServicesController::class, 'index']);
+
+
+    // Route to get ServicePurchased list with due amounts
+    Route::get('/service-purchased/due-list', [ServicePurchasedDuePaymentController::class, 'getServicePurchasedList']);
+
+    // Route to create a payment for a specific ServicePurchased record
+    Route::post('/service-purchased/create-payment', [ServicePurchasedDuePaymentController::class, 'createPayment']);
+
+
+
+
 });
+
+

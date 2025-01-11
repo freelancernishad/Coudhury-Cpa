@@ -46,7 +46,35 @@ class UserServicePurchasedController extends Controller
         }
 
         // Decode the service_details JSON string into an array
-        $serviceDetails = json_decode($request->input('service_details'), true);
+        // $serviceDetails = json_decode($request->input('service_details'), true);
+
+
+        $serviceDetails = $request->input('service_details');
+
+        // Option 1: If service_details is a JSON string, decode it
+        if (is_string($serviceDetails)) {
+            $serviceDetails = json_decode($serviceDetails, true);
+
+            // Check if JSON decoding was successful
+            if (json_last_error() === JSON_ERROR_NONE) {
+                 $$serviceDetails = $serviceDetails;
+            } else {
+
+                $$serviceDetails = []; // Return an empty array if decoding fails
+            }
+        }
+
+        // Option 2: If service_details is already an array, use it directly
+        if (is_array($serviceDetails)) {
+             $serviceDetails =$serviceDetails;
+        }
+
+
+
+
+
+
+
 
         if (json_last_error() !== JSON_ERROR_NONE) {
             return response()->json(['error' => 'Invalid service_details JSON'], 400);

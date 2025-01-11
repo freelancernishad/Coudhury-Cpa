@@ -7,6 +7,7 @@ use Stripe\Webhook;
 use App\Models\User;
 use App\Models\Payment;
 use Stripe\PaymentIntent;
+use Stripe\PaymentMethod;
 use Illuminate\Http\Request;
 use Stripe\Checkout\Session;
 use App\Models\StripeCustomer;
@@ -77,10 +78,15 @@ class StripeController extends Controller
     }
 
 
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
     public function handleWebhook(Request $request)
     {
         // Secret key for Stripe Webhook signature verification
-        $endpoint_secret = config('STRIPE_WEBHOOK_SECRET');
+        $endpoint_secret = config('services.stripe.webhook_secret');
 
         // Get raw body and signature header
         $payload = $request->getContent();
@@ -94,82 +100,27 @@ class StripeController extends Controller
             switch ($event->type) {
                 case 'checkout.session.completed':
                     $session = $event->data->object; // Contains \Stripe\Checkout\Session
-                    Log::info($session);
-                    // Retrieve the PaymentIntent associated with the session
-                    $paymentIntent = \Stripe\PaymentIntent::retrieve($session->payment_intent);
+                    Log::info('Checkout Session Completed:', $session->toArray());
 
-                    Log::info($paymentIntent);
+                    // Retrieve the PaymentIntent associated with the session
+                    $paymentIntent = PaymentIntent::retrieve($session->payment_intent);
+                    Log::info('PaymentIntent:', $paymentIntent->toArray());
+
                     // Extract payment method details
-                    $paymentMethod = \Stripe\PaymentMethod::retrieve($paymentIntent->payment_method);
-                    Log::info($paymentMethod);
+                    $paymentMethod = PaymentMethod::retrieve($paymentIntent->payment_method);
+                    Log::info('PaymentMethod:', $paymentMethod->toArray());
+
                     // Extract card or bank details
-                    $paymentMethodDetails = [];
-                    if ($paymentMethod->type === 'card') {
-                        $paymentMethodDetails = [
-                            'type' => 'card',
-                            'brand' => $paymentMethod->card->brand,
-                            'last4' => $paymentMethod->card->last4,
-                            'exp_month' => $paymentMethod->card->exp_month,
-                            'exp_year' => $paymentMethod->card->exp_year,
-                        ];
-                    } elseif ($paymentMethod->type === 'bank_account') {
-                        $paymentMethodDetails = [
-                            'type' => 'bank_account',
-                            'bank_name' => $paymentMethod->bank_account->bank_name,
-                            'last4' => $paymentMethod->bank_account->last4,
-                            'routing_number' => $paymentMethod->bank_account->routing_number,
-                        ];
-                    }
+                    $paymentMethodDetails = $this->extractPaymentMethodDetails($paymentMethod);
 
                     // Find the payment record and update status
                     $payment = Payment::where('stripe_session', $session->id)->first();
                     if ($payment) {
-                        $payment->update([
-                            'status' => 'completed',
-                            'paid_at' => now(),
-                            'response_data' => json_encode($session),
-                            'payment_method_details' => json_encode($paymentMethodDetails), // Store payment method details
-                        ]);
-
-                        // Save Stripe customer and payment method details
-                        $stripeCustomer = StripeCustomer::updateOrCreate(
-                            ['user_id' => $payment->user_id], // Match by user ID
-                            ['stripe_customer_id' => $paymentIntent->customer]
-                        );
-
-                        // Save the payment method
-                        StripePaymentMethod::updateOrCreate(
-                            ['stripe_payment_method_id' => $paymentMethod->id], // Match by payment method ID
-                            [
-                                'stripe_customer_id' => $stripeCustomer->id,
-                                'details' => $paymentMethodDetails,
-                                'is_default' => false, // Mark as non-default (you can set logic for default)
-                            ]
-                        );
-
-                        // Check if payable type is "ServicePurchased" and update the ServicePurchased record
-                        if ($payment->payable_type === ServicePurchased::class) {
-                            $servicePurchased = ServicePurchased::find($payment->payable_id);
-                            if ($servicePurchased && $servicePurchased->status === 'pending') {
-                                // Update the paid_amount and due_amount
-                                $servicePurchased->paid_amount = $payment->amount;
-                                $servicePurchased->due_amount = $servicePurchased->subtotal - $servicePurchased->paid_amount;
-
-                                // Update status based on due_amount
-                                if ($servicePurchased->due_amount <= 0) {
-                                    $servicePurchased->status = 'In Review';
-                                } else {
-                                    $servicePurchased->status = 'partially_paid';
-                                }
-                                $servicePurchased->save();
-                            }
-                        }
-                        Log::info($payment->payable_type);
+                        $this->updatePaymentAndServicePurchased($payment, $paymentIntent, $paymentMethodDetails);
 
                         // Check if payable type is "Package" and call PackageSubscribe
                         if ($payment->payable_type === 'Package') {
-                            Log::info("Package".$payment->payable_type);
-
+                            Log::info("Package: " . $payment->payable_type);
                             PackageSubscribe($payment->payable_id, $payment->user_id);
                         }
                     }
@@ -178,75 +129,23 @@ class StripeController extends Controller
                 case 'payment_intent.succeeded':
                     // Handle successful payment
                     $paymentIntent = $event->data->object; // Contains \Stripe\PaymentIntent
+                    Log::info('PaymentIntent Succeeded:', $paymentIntent->toArray());
 
                     // Extract payment method details
-                    $paymentMethod = \Stripe\PaymentMethod::retrieve($paymentIntent->payment_method);
+                    $paymentMethod = PaymentMethod::retrieve($paymentIntent->payment_method);
+                    Log::info('PaymentMethod:', $paymentMethod->toArray());
 
                     // Extract card or bank details
-                    $paymentMethodDetails = [];
-                    if ($paymentMethod->type === 'card') {
-                        $paymentMethodDetails = [
-                            'type' => 'card',
-                            'brand' => $paymentMethod->card->brand,
-                            'last4' => $paymentMethod->card->last4,
-                            'exp_month' => $paymentMethod->card->exp_month,
-                            'exp_year' => $paymentMethod->card->exp_year,
-                        ];
-                    } elseif ($paymentMethod->type === 'bank_account') {
-                        $paymentMethodDetails = [
-                            'type' => 'bank_account',
-                            'bank_name' => $paymentMethod->bank_account->bank_name,
-                            'last4' => $paymentMethod->bank_account->last4,
-                            'routing_number' => $paymentMethod->bank_account->routing_number,
-                        ];
-                    }
+                    $paymentMethodDetails = $this->extractPaymentMethodDetails($paymentMethod);
 
+                    // Find the payment record and update status
                     $payment = Payment::where('transaction_id', $paymentIntent->id)->first();
                     if ($payment) {
-                        $payment->update([
-                            'status' => 'completed',
-                            'paid_at' => now(),
-                            'payment_method_details' => json_encode($paymentMethodDetails), // Store payment method details
-                        ]);
-
-                        // Save Stripe customer and payment method details
-                        $stripeCustomer = StripeCustomer::updateOrCreate(
-                            ['user_id' => $payment->user_id], // Match by user ID
-                            ['stripe_customer_id' => $paymentIntent->customer]
-                        );
-
-                        // Save the payment method
-                        StripePaymentMethod::updateOrCreate(
-                            ['stripe_payment_method_id' => $paymentMethod->id], // Match by payment method ID
-                            [
-                                'stripe_customer_id' => $stripeCustomer->id,
-                                'details' => $paymentMethodDetails,
-                                'is_default' => false, // Mark as non-default (you can set logic for default)
-                            ]
-                        );
-
-                        // Check if payable type is "ServicePurchased" and update the ServicePurchased record
-                        if ($payment->payable_type === ServicePurchased::class) {
-                            $servicePurchased = ServicePurchased::find($payment->payable_id);
-                            if ($servicePurchased) {
-                                // Update the paid_amount and due_amount
-                                $servicePurchased->paid_amount += $payment->amount;
-                                $servicePurchased->due_amount = $servicePurchased->subtotal - $servicePurchased->paid_amount;
-
-                                // Update status based on due_amount
-                                if ($servicePurchased->due_amount <= 0) {
-                                    $servicePurchased->status = 'In review';
-                                } else {
-                                    $servicePurchased->status = 'partially_paid';
-                                }
-
-                                $servicePurchased->save();
-                            }
-                        }
+                        $this->updatePaymentAndServicePurchased($payment, $paymentIntent, $paymentMethodDetails);
 
                         // Check if payable type is "Package" and call PackageSubscribe
                         if ($payment->payable_type === 'Package') {
-                            PackageSubscribe($payment->payable_id);
+                            PackageSubscribe($payment->payable_id, $payment->user_id);
                         }
                     }
                     break;
@@ -254,6 +153,8 @@ class StripeController extends Controller
                 case 'payment_intent.payment_failed':
                     // Handle failed payment
                     $paymentIntent = $event->data->object;
+                    Log::info('PaymentIntent Failed:', $paymentIntent->toArray());
+
                     $payment = Payment::where('transaction_id', $paymentIntent->id)->first();
                     if ($payment) {
                         $payment->update([
@@ -274,6 +175,7 @@ class StripeController extends Controller
 
                 default:
                     // Unexpected event type
+                    Log::info('Unhandled Event Type:', ['type' => $event->type]);
                     return response()->json(['message' => 'Event type not handled'], 400);
             }
 
@@ -282,9 +184,161 @@ class StripeController extends Controller
 
         } catch (\Exception $e) {
             // If there is an error with the webhook or signature verification
+            Log::error('Webhook Error:', ['error' => $e->getMessage()]);
             return response()->json(['error' => 'Webhook Error: ' . $e->getMessage()], 400);
         }
     }
+
+    /**
+     * Extract payment method details.
+     *
+     * @param \Stripe\PaymentMethod $paymentMethod
+     * @return array
+     */
+    private function extractPaymentMethodDetails($paymentMethod): array
+    {
+        $paymentMethodDetails = [];
+        if ($paymentMethod->type === 'card') {
+            $paymentMethodDetails = [
+                'type' => 'card',
+                'brand' => $paymentMethod->card->brand,
+                'last4' => $paymentMethod->card->last4,
+                'exp_month' => $paymentMethod->card->exp_month,
+                'exp_year' => $paymentMethod->card->exp_year,
+            ];
+        } elseif ($paymentMethod->type === 'bank_account') {
+            $paymentMethodDetails = [
+                'type' => 'bank_account',
+                'bank_name' => $paymentMethod->bank_account->bank_name,
+                'last4' => $paymentMethod->bank_account->last4,
+                'routing_number' => $paymentMethod->bank_account->routing_number,
+            ];
+        }
+        return $paymentMethodDetails;
+    }
+
+    /**
+     * Update payment and ServicePurchased records.
+     *
+     * @param Payment $payment
+     * @param \Stripe\PaymentIntent $paymentIntent
+     * @param array $paymentMethodDetails
+     * @return void
+     */
+    private function updatePaymentAndServicePurchased($payment, $paymentIntent, $paymentMethodDetails): void
+    {
+        $payment->update([
+            'status' => 'completed',
+            'paid_at' => now(),
+            'response_data' => json_encode($paymentIntent),
+            'payment_method_details' => json_encode($paymentMethodDetails), // Store payment method details
+        ]);
+
+        // Save Stripe customer and payment method details
+        $stripeCustomer = StripeCustomer::updateOrCreate(
+            ['user_id' => $payment->user_id], // Match by user ID
+            ['stripe_customer_id' => $paymentIntent->customer]
+        );
+
+        // Save the payment method
+        StripePaymentMethod::updateOrCreate(
+            ['stripe_payment_method_id' => $paymentMethodDetails['id'] ?? null], // Match by payment method ID
+            [
+                'stripe_customer_id' => $stripeCustomer->id,
+                'details' => $paymentMethodDetails,
+                'is_default' => false, // Mark as non-default (you can set logic for default)
+            ]
+        );
+
+        // Check if payable type is "ServicePurchased"
+        if ($payment->payable_type === ServicePurchased::class) {
+            $servicePurchased = ServicePurchased::find($payment->payable_id);
+            if ($servicePurchased) {
+                // Handle based on the event type
+                switch ($servicePurchased->event) {
+                    case 'Purchase':
+                        // Execute your old code for "Purchase" event
+                        $this->handlePurchaseEvent($servicePurchased, $payment);
+                        break;
+
+                    case 'Due Amount':
+                        // Handle "Due Amount" event
+                        $this->handleDueAmountEvent($servicePurchased, $payment);
+                        break;
+
+                    default:
+                        // Log unexpected event type
+                        Log::info('ServicePurchased record skipped due to invalid event:', [
+                            'id' => $servicePurchased->id,
+                            'event' => $servicePurchased->event,
+                        ]);
+                        break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Handle "Purchase" event.
+     *
+     * @param ServicePurchased $servicePurchased
+     * @param Payment $payment
+     * @return void
+     */
+    private function handlePurchaseEvent(ServicePurchased $servicePurchased, Payment $payment): void
+    {
+        // Your old code for handling "Purchase" event
+        $servicePurchased->paid_amount = $payment->amount;
+        $servicePurchased->due_amount = $servicePurchased->subtotal - $servicePurchased->paid_amount;
+
+        // Update status based on due_amount
+        if ($servicePurchased->due_amount <= 0) {
+            $servicePurchased->status = 'In Review';
+        } else {
+            $servicePurchased->status = 'partially_paid';
+        }
+
+        $servicePurchased->save();
+
+        Log::info('ServicePurchased record updated for Purchase event:', [
+            'id' => $servicePurchased->id,
+            'paid_amount' => $servicePurchased->paid_amount,
+            'due_amount' => $servicePurchased->due_amount,
+            'status' => $servicePurchased->status,
+        ]);
+    }
+
+    /**
+     * Handle "Due Amount" event.
+     *
+     * @param ServicePurchased $servicePurchased
+     * @param Payment $payment
+     * @return void
+     */
+    private function handleDueAmountEvent(ServicePurchased $servicePurchased, Payment $payment): void
+    {
+        // Decrease the due_amount by the payment amount
+        $servicePurchased->due_amount -= $payment->amount;
+
+        // Ensure due_amount does not go below zero
+        if ($servicePurchased->due_amount < 0) {
+            $servicePurchased->due_amount = 0;
+        }
+
+        // Save the updated ServicePurchased record
+        $servicePurchased->save();
+
+        // Log the update
+        Log::info('ServicePurchased record updated for Due Amount event:', [
+            'id' => $servicePurchased->id,
+            'due_amount' => $servicePurchased->due_amount,
+        ]);
+    }
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 
 
     // Create a PaymentIntent (for processing payment)
