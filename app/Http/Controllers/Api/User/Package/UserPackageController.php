@@ -72,6 +72,8 @@ class UserPackageController extends Controller
 
         // Extract validated data
         $userId = auth()->id(); // Use authenticated user's ID
+
+
         $currency = $request->currency ?? 'USD'; // Default currency to USD
         $payableType = $request->payable_type;
         $payableId = $request->payable_id;

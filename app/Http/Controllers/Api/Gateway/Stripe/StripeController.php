@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Gateway\Stripe;
 
 use Stripe\Stripe;
 use Stripe\Webhook;
+use App\Models\User;
 use App\Models\Payment;
 use Stripe\PaymentIntent;
 use Illuminate\Http\Request;
@@ -26,8 +27,7 @@ class StripeController extends Controller
     // Create a payment session for Stripe Checkout
     public function createCheckoutSession(Request $request)
     {
-        // Get the authenticated user's ID
-        $userId = auth()->id() ?? null;
+
 
         // Validate incoming data
         $validator = Validator::make($request->all(), [
@@ -38,6 +38,7 @@ class StripeController extends Controller
             'coupon_id' => 'nullable|exists:coupons,id',
             'payable_type' => 'nullable|string',
             'payable_id' => 'nullable|integer',
+            'customerId' => 'nullable',
         ]);
 
         if ($validator->fails()) {
@@ -47,7 +48,26 @@ class StripeController extends Controller
         try {
             // Add authenticated user ID to the validated data
             $validatedData = $validator->validated();
+            // First, check if the user is authenticated
+            if (auth()->check()) {
+                // Use the authenticated user's ID
+                $userId = auth()->id();
+            } else {
+                // If not authenticated, check if customerId is provided in the request
+                if ($request->customerId) {
+                    // Find the user where client_id matches customerId
+                    $user = User::where('client_id', $request->customerId)->first();
+
+                    // If the user is found, use their ID; otherwise, use null or a default value
+                    $userId = $user ? $user->id : null;
+                } else {
+                    // If no customerId is provided and the user is not authenticated, set userId to null
+                    $userId = null;
+                }
+            }
+
             $validatedData['user_id'] = $userId;
+
 
             // Pass validated data to the helper function
             return createStripeCheckoutSession($validatedData);

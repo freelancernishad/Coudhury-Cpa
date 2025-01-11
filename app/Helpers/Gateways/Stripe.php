@@ -6,6 +6,7 @@ use App\Models\Payment;
 use App\Models\PackageAddon;
 use Stripe\Checkout\Session;
 use App\Models\StripeCustomer;
+use App\Models\User;
 use App\Models\UserPackageAddon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
@@ -70,10 +71,14 @@ function createStripeCheckoutSession(array $data): JsonResponse
             // Use existing Stripe Customer ID
             $stripeCustomerId = $stripeCustomer->stripe_customer_id;
         } else {
+
+
+            $user = User::find($userId);
+
             // Create a new Stripe Customer
             $customer = \Stripe\Customer::create([
-                'email' => auth()->user()->email, // Use the authenticated user's email
-                'name' => auth()->user()->name, // Use the authenticated user's name
+                'email' => $user->email, // Use the authenticated user's email
+                'name' => $user->name, // Use the authenticated user's name
                 'metadata' => [
                     'user_id' => $userId, // Store your internal user ID in metadata
                 ],
