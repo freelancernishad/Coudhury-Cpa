@@ -35,11 +35,12 @@ class UserProfileController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|string|max:255',
             'profile_picture' => 'sometimes|image|max:2048',
-            'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
+            // 'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
             'nid_no' => 'sometimes|string|max:255',
             'address_line1' => 'sometimes|string|max:255',
             'address_line2' => 'sometimes|string|max:255',
             'phone' => 'sometimes|string|max:255',
+            'business_type' => 'sometimes|string|max:255', // Add validation for business_type
         ]);
 
         if ($validator->fails()) {
@@ -49,11 +50,12 @@ class UserProfileController extends Controller
         // Update user's profile with validated data
         $user->update($request->only([
             'name',
-            'email',
+            // 'email',
             'nid_no',
             'address_line1',
             'address_line2',
             'phone',
+            'business_type', // Include business_type in the update
         ]));
 
         // Handle profile picture upload if provided
@@ -70,23 +72,26 @@ class UserProfileController extends Controller
         return response()->json($user);
     }
 
-
+    /**
+     * Update client IDs for all users where client_id is NULL or 0.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updateClientIds()
-{
-    // Get all users where client_id is NULL or 0
-    $users = User::all();
+    {
+        // Get all users where client_id is NULL or 0
+        $users = User::all();
 
-    foreach ($users as $user) {
-        do {
-            // Generate a random 6-digit number
-            $clientId = mt_rand(100000, 999999);
-        } while (User::where('client_id', $clientId)->exists()); // Ensure it's unique
+        foreach ($users as $user) {
+            do {
+                // Generate a random 6-digit number
+                $clientId = mt_rand(100000, 999999);
+            } while (User::where('client_id', $clientId)->exists()); // Ensure it's unique
 
-        // Update the user with the unique client_id
-        $user->update(['client_id' => $clientId]);
+            // Update the user with the unique client_id
+            $user->update(['client_id' => $clientId]);
+        }
+
+        return response()->json(['message' => 'Client IDs updated successfully!']);
     }
-
-    return response()->json(['message' => 'Client IDs updated successfully!']);
-}
-
 }
