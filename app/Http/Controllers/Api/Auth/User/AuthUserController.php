@@ -123,6 +123,42 @@ class AuthUserController extends Controller
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
 
+
+
+
+            if (!$user->hasVerifiedEmail()) {
+                $verify_url = $request->verify_url ?? null;
+
+                if ($verify_url) {
+                    try {
+                        Mail::to($user->email)->send(new VerifyEmail($user, $verify_url));
+                    } catch (\Exception $e) {
+                        \Log::error('Failed to send verification email: ' . $e->getMessage());
+
+                    }
+                } else {
+                    $otp = random_int(100000, 999999);
+                    $user->otp = Hash::make($otp);
+                    $user->otp_expires_at = now()->addMinutes(5);
+                    $user->save();
+
+                    try {
+                        Mail::to($user->email)->send(new OtpNotification($otp));
+                    } catch (\Exception $e) {
+                        \Log::error('Failed to send OTP: ' . $e->getMessage());
+
+                    }
+                }
+            }
+
+
+
+
+
+
+
+
+
             // Custom payload data, including email verification status
             $payload = [
                 'email' => $user->email,
