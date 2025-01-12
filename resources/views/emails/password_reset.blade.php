@@ -67,7 +67,7 @@
             <p>Best regards,<br>The Team</p>
         </div>
         <div class="footer">
-            <p>&copy; {{ date('Y') }} Your Company. All rights reserved.</p>
+            <p>&copy; {{ date('Y') }} Chaudri CPA. All rights reserved.</p>
         </div>
     </div>
 </body>
