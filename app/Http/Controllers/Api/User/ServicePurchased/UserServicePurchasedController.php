@@ -57,10 +57,10 @@ class UserServicePurchasedController extends Controller
 
             // Check if JSON decoding was successful
             if (json_last_error() === JSON_ERROR_NONE) {
-                 $$serviceDetails = $serviceDetails;
+                 $serviceDetails = $serviceDetails;
             } else {
 
-                $$serviceDetails = []; // Return an empty array if decoding fails
+                $serviceDetails = []; // Return an empty array if decoding fails
             }
         }
 
