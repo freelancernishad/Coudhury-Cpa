@@ -235,20 +235,20 @@ class StripeController extends Controller
         ]);
 
         // Save Stripe customer and payment method details
-        $stripeCustomer = StripeCustomer::updateOrCreate(
-            ['user_id' => $payment->user_id], // Match by user ID
-            ['stripe_customer_id' => $paymentIntent->customer]
-        );
+        // $stripeCustomer = StripeCustomer::updateOrCreate(
+        //     ['user_id' => $payment->user_id], // Match by user ID
+        //     ['stripe_customer_id' => $paymentIntent->customer]
+        // );
 
-        // Save the payment method
-        StripePaymentMethod::updateOrCreate(
-            ['stripe_payment_method_id' => $paymentMethodDetails['id'] ?? null], // Match by payment method ID
-            [
-                'stripe_customer_id' => $stripeCustomer->id,
-                'details' => $paymentMethodDetails,
-                'is_default' => false, // Mark as non-default (you can set logic for default)
-            ]
-        );
+        // // Save the payment method
+        // StripePaymentMethod::updateOrCreate(
+        //     ['stripe_payment_method_id' => $paymentMethodDetails['id'] ?? null], // Match by payment method ID
+        //     [
+        //         'stripe_customer_id' => $stripeCustomer->id,
+        //         'details' => $paymentMethodDetails,
+        //         'is_default' => false, // Mark as non-default (you can set logic for default)
+        //     ]
+        // );
 
         Log::info("updatePaymentAndServicePurchased =".$payment);
         // Check if payable type is "ServicePurchased"
