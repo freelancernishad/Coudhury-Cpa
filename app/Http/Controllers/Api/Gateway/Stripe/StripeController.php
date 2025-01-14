@@ -250,11 +250,12 @@ class StripeController extends Controller
         //     ]
         // );
 
-        Log::info("updatePaymentAndServicePurchased =".$payment);
+ 
         // Check if payable type is "ServicePurchased"
         if ($payment->payable_type === ServicePurchased::class) {
-            Log::info("updatePaymentAndServicePurchased =".$payment);
+          
             $servicePurchased = ServicePurchased::find($payment->payable_id);
+            Log::info("updatePaymentAndServicePurchased =".$servicePurchased);
             if ($servicePurchased) {
                 // Handle based on the event type
                 switch ($servicePurchased->event) {
