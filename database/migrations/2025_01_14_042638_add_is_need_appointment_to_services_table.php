@@ -12,7 +12,7 @@ class AddIsNeedAppointmentToServicesTable extends Migration
     public function up()
     {
         Schema::table('services', function (Blueprint $table) {
-            $table->boolean('is_need_appointment')->default(false)->after('is_state_select');
+            $table->boolean('is_need_appointment')->default(0)->after('is_state_select');
         });
     }
 
