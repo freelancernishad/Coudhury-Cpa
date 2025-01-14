@@ -70,7 +70,7 @@
         </p>
         <div class="footer">
             <p>Thank you for choosing our service!</p>
-            <p>If you have any questions, feel free to <a target="_blank" href="#">contact us</a>.</p>
+            <p>If you have any questions, feel free to <a target="_blank" href="https://www.chaudricpa.com/contact">contact us</a>.</p>
         </div>
     </div>
 </body>
