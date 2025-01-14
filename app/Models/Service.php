@@ -9,7 +9,8 @@ class Service extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'slug', 'parent_id', 'input_label', 'price','is_select_multiple_child','is_add_on','is_state_select'];
+    protected $fillable = ['name', 'slug', 'parent_id', 'input_label', 'price','is_select_multiple_child','is_add_on','is_state_select',
+    'is_need_appointment'];
 
        /**
      * The "booted" method of the model.
@@ -141,7 +142,11 @@ class Service extends Model
     {
         return (bool) $value; // Convert 0/1 to false/true
     }
-
+    
+    public function getIsNeedAppointmentAttribute($value)
+    {
+        return (bool) $value; // Convert 0/1 to false/true
+    }
 
 
 }

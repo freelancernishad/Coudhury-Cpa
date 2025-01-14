@@ -33,6 +33,7 @@ class AdminServicesController extends Controller
             'is_select_multiple_child' => 'nullable',
             'is_add_on' => 'nullable',
             'is_state_select' => 'nullable',
+            'is_need_appointment' => 'nullable',
         ]);
 
         if ($validator->fails()) {
@@ -44,7 +45,7 @@ class AdminServicesController extends Controller
         }
 
         // Create the service
-        $service = Service::create($request->only(['name', 'slug', 'parent_id', 'input_label', 'price','is_select_multiple_child','is_add_on','is_state_select']));
+        $service = Service::create($request->only(['name', 'slug', 'parent_id', 'input_label', 'price','is_select_multiple_child','is_add_on','is_state_select','is_need_appointment']));
         // $service->updateParentFromRequest($request->all());
         return response()->json($service, 201);
     }
@@ -62,6 +63,7 @@ class AdminServicesController extends Controller
         'is_select_multiple_child' => 'nullable',
         'is_add_on' => 'nullable',
         'is_state_select' => 'nullable',
+        'is_need_appointment' => 'nullable',
     ]);
 
     if ($validator->fails()) {
@@ -79,7 +81,7 @@ class AdminServicesController extends Controller
     if (empty($parentIds)) {
         $service = Service::create($request->only([
             'name', 'slug', 'input_label', 'price',
-            'is_select_multiple_child', 'is_add_on', 'is_state_select'
+            'is_select_multiple_child', 'is_add_on', 'is_state_select', 'is_need_appointment'
         ]));
         return response()->json($service, 201);
     }
@@ -95,6 +97,7 @@ class AdminServicesController extends Controller
             'is_select_multiple_child' => $request->input('is_select_multiple_child'),
             'is_add_on' => $request->input('is_add_on'),
             'is_state_select' => $request->input('is_state_select'),
+            'is_need_appointment' => $request->input('is_need_appointment'),
         ]);
         $createdServices[] = $service;
     }
@@ -137,6 +140,7 @@ class AdminServicesController extends Controller
             'is_select_multiple_child' => 'nullable',
             'is_add_on' => 'nullable',
             'is_state_select' => 'nullable',
+            'is_need_appointment' => 'nullable',
         ]);
 
         if ($validator->fails()) {
@@ -154,7 +158,7 @@ class AdminServicesController extends Controller
         }
 
         // Update the service
-        $service->update($request->only(['name', 'slug', 'parent_id', 'input_label', 'price','is_select_multiple_child','is_add_on','is_state_select']));
+        $service->update($request->only(['name', 'slug', 'parent_id', 'input_label', 'price','is_select_multiple_child','is_add_on','is_state_select','is_need_appointment']));
         // $service->updateParentFromRequest($request->all());
         return response()->json(['message' => 'Service updated successfully', 'service' => $service], 200);
     }
