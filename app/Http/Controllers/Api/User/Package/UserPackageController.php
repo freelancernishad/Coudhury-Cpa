@@ -84,6 +84,11 @@ class UserPackageController extends Controller
         $cancelUrl = $request->cancel_url ?? 'http://localhost:8000/stripe/payment/cancel';
         $billing_interval = $request->billing_interval ?? 'one_time';
 
+
+           // Convert payable_type to fully qualified class name (FQCN)
+        $payableType = 'App\\Models\\' . $payableType;
+
+
         // Retrieve package and ensure it's valid
         $package = Package::find($payableId);
         if (!$package) {

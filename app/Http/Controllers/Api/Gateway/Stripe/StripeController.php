@@ -119,7 +119,7 @@ class StripeController extends Controller
                         $this->updatePaymentAndServicePurchased($payment, $paymentIntent, $paymentMethodDetails);
 
                         // Check if payable type is "Package" and call PackageSubscribe
-                        if ($payment->payable_type === 'Package') {
+                        if ($payment->payable_type === 'App\\Models\\Package') {
                             Log::info("Package: " . $payment->payable_type);
                             PackageSubscribe($payment->payable_id, $payment->user_id);
                         }
