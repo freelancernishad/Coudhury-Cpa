@@ -89,27 +89,40 @@ class AdminPaymentController extends Controller
         $transactions->getCollection()->transform(function ($payment) {
             $servicePurchased = $payment->payable;
 
-            // Check if payable is a package and include package name
-            $packageName = null;
-            if ($payment->payable_type === 'App\\Models\\Package') {
-                $packageName = $servicePurchased->name; // Assuming the Package model has a 'name' attribute
-            }
+            // Initialize service_details and package_name
+    $serviceDetails = $servicePurchased ? $servicePurchased->formatted_service_details : null;
+    $packageName = null;
 
-            return [
-                'id' => $payment->id,
-                'transaction_id' => $payment->transaction_id,
-                'client_id' => $payment->user->client_id,
-                'name' => $payment->user->name,
-                'email' => $payment->user->email,
-                'profile_picture' => $payment->user->profile_picture,
-                'amount' => $payment->amount,
-                'paid_at' => $payment->paid_at,
-                'event' => $payment->event,
-                'status' => $payment->status,
-                'due_amount' => $servicePurchased ? $servicePurchased->due_amount : 0, // Add due_amount at root level
-                'service_details' => $servicePurchased ? $servicePurchased->formatted_service_details : 0, // Add service_details at root level
-                'package_name' => $packageName, // Include package name if payable is a package
+    // Check if payable is a package and include package name in service_details
+    if ($payment->payable_type === 'App\\Models\\Package') {
+        $packageName = $servicePurchased->name; // Get the package name
+
+        // If service_details is not already an array, initialize it
+        if (!is_array($serviceDetails)) {
+            $serviceDetails = [
+                'selected_services' => []
             ];
+        }
+
+        // Add the package name to the selected_services array
+        $serviceDetails['selected_services'][] = $packageName;
+        }
+
+        return [
+            'id' => $payment->id,
+            'transaction_id' => $payment->transaction_id,
+            'client_id' => $payment->user->client_id,
+            'name' => $payment->user->name,
+            'email' => $payment->user->email,
+            'profile_picture' => $payment->user->profile_picture,
+            'amount' => $payment->amount,
+            'paid_at' => $payment->paid_at,
+            'event' => $payment->event,
+            'status' => $payment->status,
+            'due_amount' => $servicePurchased ? $servicePurchased->due_amount : 0, // Add due_amount at root level
+            'service_details' => $serviceDetails, // Updated service_details with package name
+    
+        ];
         });
 
         return response()->json($transactions);
