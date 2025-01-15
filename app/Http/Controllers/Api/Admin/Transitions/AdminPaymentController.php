@@ -68,6 +68,14 @@ class AdminPaymentController extends Controller
             ]);
         }
 
+
+        // Search by transaction_id if provided
+        if ($request->has('search')) {
+            $searchTerm = $request->input('search');
+            $query->where('transaction_id', 'like', '%' . $searchTerm . '%');
+        }
+
+
         // Select specific fields and include user data
         $query->with(['user' => function ($query) {
             $query->select([
