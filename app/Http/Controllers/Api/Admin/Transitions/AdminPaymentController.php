@@ -95,7 +95,7 @@ class AdminPaymentController extends Controller
 
     // Check if payable is a package and include package name in service_details
     if ($payment->payable_type === 'App\\Models\\Package') {
-        $packageName = $servicePurchased->name; // Get the package name
+        $packageName = $servicePurchased->name ?? " "; // Get the package name
 
         // If service_details is not already an array, initialize it
         if (!is_array($serviceDetails)) {
@@ -121,7 +121,7 @@ class AdminPaymentController extends Controller
             'status' => $payment->status,
             'due_amount' => $servicePurchased ? $servicePurchased->due_amount : 0, // Add due_amount at root level
             'service_details' => $serviceDetails, // Updated service_details with package name
-    
+
         ];
         });
 
