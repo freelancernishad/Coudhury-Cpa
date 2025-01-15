@@ -79,15 +79,21 @@ class AdminPaymentController extends Controller
             ]);
         }]);
 
-        // Include ServicePurchased to access service_details and due_amount
+        // Include payable (ServicePurchased or Package) with necessary fields
         $query->with(['payable']);
 
         // Fetch results with pagination and order by `paid_at` descending
         $transactions = $query->orderBy('paid_at', 'desc')->paginate($request->input('per_page', 15));
 
-        // Transform the response to include user data, due_amount, and service_details
+        // Transform the response to include user data, due_amount, service_details, and package name
         $transactions->getCollection()->transform(function ($payment) {
             $servicePurchased = $payment->payable;
+
+            // Check if payable is a package and include package name
+            $packageName = null;
+            if ($payment->payable_type === 'App\\Models\\Package') {
+                $packageName = $servicePurchased->name; // Assuming the Package model has a 'name' attribute
+            }
 
             return [
                 'id' => $payment->id,
@@ -102,6 +108,7 @@ class AdminPaymentController extends Controller
                 'status' => $payment->status,
                 'due_amount' => $servicePurchased ? $servicePurchased->due_amount : 0, // Add due_amount at root level
                 'service_details' => $servicePurchased ? $servicePurchased->formatted_service_details : 0, // Add service_details at root level
+                'package_name' => $packageName, // Include package name if payable is a package
             ];
         });
 

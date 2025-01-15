@@ -151,7 +151,7 @@ class UserServicePurchasedController extends Controller
             'payable_type' => ServicePurchased::class,
             'payable_id' => $servicePurchased->id,
             'coupon_id' => $couponId,
-            'event' => 'Purchase', //Purchase/Due Amount
+            'event' => 'Service Purchase', //Purchase/Due Amount
         ]);
 
         try {

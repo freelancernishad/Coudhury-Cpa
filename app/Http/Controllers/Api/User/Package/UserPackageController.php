@@ -115,6 +115,7 @@ class UserPackageController extends Controller
                 'coupon_id' => $couponId, // Pass coupon_id here
                 'success_url' => $successUrl,
                 'cancel_url' => $cancelUrl,
+                'event' => "Package Purchase",
                 'billing_interval' => $billing_interval,
             ]);
 
