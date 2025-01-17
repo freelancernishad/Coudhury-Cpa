@@ -46,6 +46,12 @@ Route::prefix('user')->group(function () {
 
         Route::post('package/subscribe', [UserPackageController::class, 'packagePurchase']);
 
+            // Get active packages
+    Route::get('/active/package', [UserPurchasedHistoryController::class, 'activePackages']);
+    // Get package history
+    Route::get('/package/history', [UserPurchasedHistoryController::class, 'packageHistory']);
+
+
 
         // Support tickets
         Route::get('/support', [SupportTicketApiController::class, 'index']);
