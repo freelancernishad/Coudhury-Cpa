@@ -213,7 +213,8 @@ class ServicePurchasedFileController extends Controller
             // Default folders
             $defaultFolders = [
                 'Uploaded Documents by CPA Admin',
-                'Uploaded Documents by Client',
+                'Uploaded Documents by Me',
+                // 'Uploaded Documents by Client',
             ];
 
             // Prepare the response structure
