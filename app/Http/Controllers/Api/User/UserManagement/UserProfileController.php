@@ -41,6 +41,7 @@ class UserProfileController extends Controller
             'address_line2' => 'sometimes|string|max:255',
             'phone' => 'sometimes|string|max:255',
             'business_type' => 'sometimes|string|max:255', // Add validation for business_type
+            'business_name' => 'sometimes|string|max:255', // Add validation for business_name
         ]);
 
         if ($validator->fails()) {
@@ -56,6 +57,7 @@ class UserProfileController extends Controller
             'address_line2',
             'phone',
             'business_type', // Include business_type in the update
+            'business_name', // Include business_name in the update
         ]));
 
         // Handle profile picture upload if provided

@@ -23,7 +23,8 @@ class UserController extends Controller
                 $q->where('name', 'LIKE', "%{$search}%")
                   ->orWhere('id', 'LIKE', "%{$search}%")
                   ->orWhere('client_id', 'LIKE', "%{$search}%")
-                  ->orWhere('email', 'LIKE', "%{$search}%");
+                  ->orWhere('email', 'LIKE', "%{$search}%")
+                  ->orWhere('business_name', 'LIKE', "%{$search}%"); // Add search for business_name
             });
         }
 
@@ -34,9 +35,7 @@ class UserController extends Controller
         return response()->json($users);
     }
 
-
-
-
+    // Create a new user
     public function store(Request $request)
     {
         // Define validation rules
@@ -50,6 +49,7 @@ class UserController extends Controller
             'address_line1' => 'sometimes|string|max:255',
             'address_line2' => 'sometimes|string|max:255',
             'phone' => 'sometimes|string|max:255',
+            'business_name' => 'sometimes|string|max:255', // Add business_name validation
         ];
 
         // Validate the request
@@ -68,6 +68,7 @@ class UserController extends Controller
             'address_line1' => $request->address_line1,
             'address_line2' => $request->address_line2,
             'phone' => $request->phone,
+            'business_name' => $request->business_name, // Add business_name
         ]);
 
         // Handle profile picture upload if provided
@@ -84,7 +85,7 @@ class UserController extends Controller
         return response()->json($user, 201);
     }
 
-
+    // Get user details
     public function show(Request $request, $id)
     {
         // Get the status from the request parameters
@@ -112,7 +113,6 @@ class UserController extends Controller
         return response()->json($response);
     }
 
-
     // Update a user
     public function update(Request $request, User $user)
     {
@@ -127,6 +127,7 @@ class UserController extends Controller
             'address_line1' => 'sometimes|string|max:255',
             'address_line2' => 'sometimes|string|max:255',
             'phone' => 'sometimes|string|max:255',
+            'business_name' => 'sometimes|string|max:255', // Add business_name validation
         ];
 
         // Validate the request
@@ -145,6 +146,7 @@ class UserController extends Controller
             'address_line1' => $request->address_line1 ?? $user->address_line1,
             'address_line2' => $request->address_line2 ?? $user->address_line2,
             'phone' => $request->phone ?? $user->phone,
+            'business_name' => $request->business_name ?? $user->business_name, // Add business_name
         ];
 
         // Update the user with the new data
@@ -172,15 +174,7 @@ class UserController extends Controller
         return response()->json(['message' => 'User deleted successfully']);
     }
 
-
-
-     /**
-     * Activate or deactivate a user.
-     *
-     * @param Request $request
-     * @param User $user
-     * @return JsonResponse
-     */
+    // Activate or deactivate a user
     public function toggleStatus(Request $request, User $user)
     {
         // Validate the request
@@ -205,8 +199,4 @@ class UserController extends Controller
             'data' => $user,
         ]);
     }
-
-
-
-
 }
