@@ -331,11 +331,12 @@ class ServicePurchasedFileController extends Controller
                 'service_purchased_files.service_purchased_id',
                 'users.name as user_name', // Include user's name
                 'users.email as user_email', // Include user's email
+                'users.client_id as client_id', // Include client_id
                 DB::raw('MAX(service_purchased_files.created_at) as latest_upload')
             )
             ->join('users', 'service_purchased_files.user_id', '=', 'users.id') // Join the users table
             // ->where('service_purchased_files.user_id', $userId) // Uncomment if user_id filter is needed
-            ->groupBy('service_purchased_files.user_id', 'service_purchased_files.service_purchased_id', 'users.name', 'users.email')
+            ->groupBy('service_purchased_files.user_id', 'service_purchased_files.service_purchased_id', 'users.name', 'users.email', 'users.client_id')
             ->orderBy('latest_upload', 'desc') // Order by latest_upload in descending order
             ->paginate($perPage); // Use Laravel's pagination
 
@@ -350,6 +351,7 @@ class ServicePurchasedFileController extends Controller
                 'service_purchased_id' => $item->service_purchased_id,
                 'user_name' => $item->user_name, // Include user's name
                 'user_email' => $item->user_email, // Include user's email
+                'client_id' => $item->client_id, // Include client_id
                 'latest_upload' => $item->latest_upload,
                 'time_ago' => $timeAgo, // Include time ago
             ];
