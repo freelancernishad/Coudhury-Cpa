@@ -259,7 +259,7 @@ class StripeController extends Controller
             if ($servicePurchased) {
                 // Handle based on the event type
                 switch ($payment->event) {
-                    case 'Purchase':
+                    case 'Service Purchase':
                         Log::info("updatePaymentAndServicePurchased =".$servicePurchased);
                         // Execute your old code for "Purchase" event
                         $this->handlePurchaseEvent($servicePurchased, $payment);
@@ -274,7 +274,7 @@ class StripeController extends Controller
                         // Log unexpected event type
                         Log::info('ServicePurchased record skipped due to invalid event:', [
                             'id' => $servicePurchased->id,
-                            'event' => $servicePurchased->event,
+                            'event' => $payment->event,
                         ]);
                         break;
                 }
