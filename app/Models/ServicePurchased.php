@@ -126,4 +126,21 @@ class ServicePurchased extends Model
             ->select('file_name', 'file_path', 'file_size', 'service_purchased_id');
     }
 
+
+    public static function getTotalAmounts($userId, $status = null)
+    {
+        $query = self::where('user_id', $userId)->where('status', '!=', 'pending');
+
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        return [
+            'total_paid_amount' => $query->sum('paid_amount'),
+            'total_due_amount' => $query->sum('due_amount'),
+        ];
+    }
+
+
+
 }

@@ -90,28 +90,34 @@ class UserController extends Controller
     {
         // Get the status from the request parameters
         $status = $request->query('status');
-
+    
         // Get the user details
         $user = User::where('client_id', $id)->first();
-
+    
         // Check if the user exists
         if (!$user) {
             return response()->json([
                 'message' => 'User not found',
             ], 404);
         }
-
+    
         // Get ServicePurchased lists based on the status
         $servicePurchasedLists = ServicePurchased::getGroupedByStatus($user->id, $status);
-
+    
+        // Get total paid and due amounts
+        $totals = ServicePurchased::getTotalAmounts($user->id, $status);
+    
         // Combine user details and ServicePurchased lists
         $response = [
             'user' => $user,
             'service_purchased' => $servicePurchasedLists,
+            'total_paid_amount' => $totals['total_paid_amount'],
+            'total_due_amount' => $totals['total_due_amount'],
         ];
-
+    
         return response()->json($response);
     }
+    
 
     // Update a user
     public function update(Request $request, User $user)
