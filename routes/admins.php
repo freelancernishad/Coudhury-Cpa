@@ -176,6 +176,7 @@ Route::prefix('admin')->group(function () {
 
 
     Route::prefix('/service-purchased')->group(function () {
+        Route::post('/create', [ServicePurchasedController::class, 'createServicePurchased']);
         Route::get('/', [ServicePurchasedController::class, 'index']); // List all records
         Route::get('/{id}', [ServicePurchasedController::class, 'show']); // View a single record
         Route::delete('/{id}', [ServicePurchasedController::class, 'destroy']); // Delete a record

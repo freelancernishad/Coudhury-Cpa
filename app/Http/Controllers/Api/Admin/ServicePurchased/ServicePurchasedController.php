@@ -6,7 +6,9 @@ use Illuminate\Http\Request;
 use App\Models\ServicePurchased;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
+use App\Models\ServicePurchasedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class ServicePurchasedController extends Controller
 {
@@ -22,18 +24,18 @@ class ServicePurchasedController extends Controller
         $perPage = $request->query('per_page', 10); // Default to 10 records per page
         $status = $request->query('status'); // Filter by status (e.g., 'pending', 'completed', 'failed')
         $search = $request->query('search'); // Global search term
-    
+
         // Query builder
         $query = ServicePurchased::with(['user', 'files'])
             ->latest();
-    
+
         // Apply filters
         if ($status) {
             $query->where('status', $status);
         } else {
             $query->where('status', '!=', 'pending');
         }
-    
+
         // Handle user_id based on the guard
         if (Auth::guard('user')->check()) {
             // If the guard is 'user', get the user_id from the authenticated user
@@ -42,28 +44,28 @@ class ServicePurchasedController extends Controller
             // For other guards, get the user_id from the request
             $query->where('user_id', $request->query('user_id'));
         }
-    
+
         // Apply global search
         if ($search) {
             $query->where(function ($q) use ($search) {
                 // Search by service name (within service_details JSON)
                 $q->where('service_details', 'like', '%' . $search . '%');
-    
+
                 // Search by user name (via user relationship)
                 $q->orWhereHas('user', function ($userQuery) use ($search) {
                     $userQuery->where('name', 'like', '%' . $search . '%')
                               ->orWhere('email', 'like', '%' . $search . '%')
                               ->orWhere('client_id', 'like', '%' . $search . '%');
                 });
-    
+
                 // Search by date (format: Y-m-d)
                 $q->orWhereDate('date', 'like', '%' . $search . '%');
             });
         }
-    
+
         // Paginate results
         $servicePurchasedList = $query->paginate($perPage);
-    
+
         return response()->json($servicePurchasedList);
     }
 
@@ -221,6 +223,75 @@ class ServicePurchasedController extends Controller
             'success' => true,
             'message' => 'Due amount removed successfully.',
             'data' => $servicePurchased,
+        ]);
+    }
+
+
+
+
+    public function createServicePurchased(Request $request): JsonResponse
+    {
+        // Validate the request
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id',
+            'service_details' => 'required', // Ensure service_details is a valid JSON string
+            'status' => 'required|string',
+            'files' => 'nullable|array',
+            'files.*' => 'file|mimes:jpeg,png,pdf,doc,docx',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        // Get the user ID from the request
+        $userId = $request->input('user_id');
+
+        // Decode the service_details JSON string into an array
+        $serviceDetails = $request->input('service_details');
+
+        if (is_string($serviceDetails)) {
+            $serviceDetails = json_decode($serviceDetails, true);
+        }
+
+        if (!is_array($serviceDetails)) {
+            return response()->json(['error' => 'Invalid service_details JSON'], 400);
+        }
+
+        // Extract amount from service_details
+        $amount = $serviceDetails['total_price'] ?? 0;
+        $notes = $serviceDetails['notes'] ?? '';
+        $status = $request->input('status');
+
+        if ($amount <= 0) {
+            return response()->json(['error' => 'Invalid total price in service details'], 400);
+        }
+
+        // Create the ServicePurchased record
+        $servicePurchased = ServicePurchased::create([
+            'user_id' => $userId,
+            'date' => now(),
+            'subtotal' => $amount,
+            'paid_amount' => 0,
+            'due_amount' => $amount,
+            'status' => $status,
+            'client_note' => $notes,
+            'admin_note' => null,
+            'discount_amount' => 0,
+            'service_details' => $serviceDetails, // Store the decoded service_details
+        ]);
+
+        // Handle file uploads from the request
+        if ($request->hasFile('files')) {
+            $files = $request->file('files');
+            foreach ($files as $file) {
+                ServicePurchasedFile::ServicePurchasedFileUpload($file, $servicePurchased->id, $userId);
+            }
+        }
+
+        return response()->json([
+            'service_purchased_id' => $servicePurchased->id,
+            'message' => 'Service purchased record created successfully.',
         ]);
     }
 
