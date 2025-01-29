@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin\Transitions;
 
+use App\Models\User;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -43,14 +44,26 @@ class AdminPaymentController extends Controller
             $query->where('coupon_id', $request->input('coupon_id'));
         }
 
+
         // Handle user_id based on the guard
         if (Auth::guard('user')->check()) {
             // If the guard is 'user', get the user_id from the authenticated user
             $query->where('user_id', Auth::guard('user')->id());
         } elseif ($request->has('user_id')) {
-            // For other guards, get the user_id from the request
-            $query->where('user_id', $request->input('user_id'));
+            // Check if the given user_id is actually a client_id
+            $clientId = $request->input('user_id');
+            $user = User::where('client_id', $clientId)->first();
+
+            if ($user) {
+                // Convert client_id to user_id
+                $query->where('user_id', $user->id);
+            } else {
+                return response()->json(['error' => 'Invalid User ID or Client ID. Please provide a valid identifier.'], 400);
+            }
+        } else {
+            return response()->json(['error' => 'User ID is required to retrieve transactions. Please log in or provide a valid user ID.'], 400);
         }
+
 
         // Apply date range filter based on `created_at`
         if ($request->has('start_date') && $request->has('end_date')) {
