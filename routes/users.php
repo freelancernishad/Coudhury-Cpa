@@ -39,6 +39,9 @@ Route::prefix('user')->group(function () {
 
 ////// auth routes
 
+        Route::get('/matrix', [UserProfileController::class, 'getUserMatrix']);
+
+
         Route::get('/profile', [UserProfileController::class, 'getProfile']);
         Route::post('/profile', [UserProfileController::class, 'updateProfile']);
 

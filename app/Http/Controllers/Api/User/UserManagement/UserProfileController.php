@@ -96,4 +96,24 @@ class UserProfileController extends Controller
 
         return response()->json(['message' => 'Client IDs updated successfully!']);
     }
+
+    public function getUserMatrix()
+    {
+        $user = auth()->user();  // Get the currently authenticated user
+
+        // Fetch the matrix data
+        $userMatrix = [
+            'total_services' => $user->servicePurchased ? $user->servicePurchased->count() : 0,  // Use servicePurchased relationship
+            'ongoing_services' => $user->servicePurchased()->where('status', 'In Review')->count(),  // Filter ongoing services by 'In Review' status
+            'total_due_amount' => $user->servicePurchased()->sum('due_amount'),  // Assuming services have a due_amount column
+            'last_payment_date' => optional($user->payments()->latest()->first())->date,  // Safely get last payment date
+            'last_payment_amount' => optional($user->payments()->latest()->first())->amount ?? 0,  // Safely get last payment amount, default to 0
+            'total_paid_amount' => $user->payments()->sum('amount'),  // Total paid amount
+        ];
+
+        return response()->json($userMatrix);
+    }
+
+
+
 }
