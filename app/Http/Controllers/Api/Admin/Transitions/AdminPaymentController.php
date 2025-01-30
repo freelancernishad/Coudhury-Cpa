@@ -16,6 +16,8 @@ class AdminPaymentController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
+
+
     public function getAllTransactionHistory(Request $request)
     {
         // Initialize query
@@ -60,8 +62,6 @@ class AdminPaymentController extends Controller
             } else {
                 return response()->json(['error' => 'Invalid User ID or Client ID. Please provide a valid identifier.'], 400);
             }
-        } else {
-            return response()->json(['error' => 'User ID is required to retrieve transactions. Please log in or provide a valid user ID.'], 400);
         }
 
 
