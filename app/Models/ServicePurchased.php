@@ -123,7 +123,7 @@ class ServicePurchased extends Model
     public function files()
     {
         return $this->hasMany(ServicePurchasedFile::class)
-            ->select('file_name', 'file_path', 'file_size', 'service_purchased_id');
+            ->select('file_name', 'file_path', 'file_size', 'service_purchased_id')->with('admin');
     }
 
 

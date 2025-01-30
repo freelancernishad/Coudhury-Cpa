@@ -123,4 +123,10 @@ class ServicePurchasedFile extends Model
            return $this->belongsTo(User::class);
        }
 
+       // Relationship with User model
+       public function admin()
+       {
+           return $this->belongsTo(Admin::class);
+       }
+
 }

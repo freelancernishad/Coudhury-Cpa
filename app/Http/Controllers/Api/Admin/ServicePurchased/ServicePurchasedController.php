@@ -78,7 +78,9 @@ class ServicePurchasedController extends Controller
     public function show(int $id): JsonResponse
     {
         // Find the ServicePurchased record
-        $servicePurchased = ServicePurchased::with(['user', 'payments'])->find($id);
+        $servicePurchased = ServicePurchased::with(['user', 'payments'])
+        ->where('status', 'In Review')
+        ->find($id);
 
         if (!$servicePurchased) {
             return response()->json([
