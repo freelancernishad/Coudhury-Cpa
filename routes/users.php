@@ -81,6 +81,7 @@ Route::prefix('user')->group(function () {
         Route::prefix('/service-purchased')->group(function () {
             Route::get('/', [ServicePurchasedController::class, 'index']); // List all records
             Route::get('/{id}', [ServicePurchasedController::class, 'show']); // View a single record
+            Route::post('/upload-file', [ServicePurchasedFileController::class, 'uploadFiles']);
 
         });
 
