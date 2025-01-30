@@ -113,32 +113,94 @@ class AdminDashboardController extends Controller
          ]);
      }
 
-     public function getAdminMatrix()
-    {
-        // Get total number of users (clients)
-        $totalClients = User::count();
+     public function getAdminMatrix(Request $request)
+     {
+         // Get the year from the request, or default to the current year
+         $year = $request->input('year', now()->year);
 
-        // Get new clients who registered in the last 7 days
-        $newClients = User::where('created_at', '>=', now()->subDays(7))->count();
+         // Get total number of users (clients)
+         $totalClients = User::count();
 
-        // Get active clients (users who have services with status "In Review")
-        $activeClients = User::whereHas('servicePurchased', function ($query) {
-            $query->where('status', 'In Review');
-        })->count();
+         // Get new clients who registered in the last 7 days
+         $newClients = User::where('created_at', '>=', now()->subDays(7))->count();
 
-        // Get total payment amount for completed payments
-        $totalPaymentsAmount = Payment::where('status', 'completed')->sum('amount'); // Only completed payments
+         // Get active clients (users who have services with status "In Review")
+         $activeClients = User::whereHas('servicePurchased', function ($query) {
+             $query->where('status', 'In Review');
+         })->count();
 
-        // Return the matrix for the admin
-        $adminMatrix = [
-            'new_clients' => $newClients,
-            'total_clients' => $totalClients,
-            'active_clients' => $activeClients,
-            'total_payments_amount' => $totalPaymentsAmount,
-        ];
+         // Get total payment amount for completed payments
+         $totalPaymentsAmount = Payment::where('status', 'completed')->sum('amount'); // Only completed payments
 
-        return response()->json($adminMatrix);
-    }
+         // Prepare months for the selected year (January to December)
+         $months = collect(range(1, 12))->map(function ($month) use ($year) {
+             return now()->setYear($year)->month($month)->format('F Y');
+         });
+
+         // Initialize arrays to store the monthly data for each series
+         $dueAmountData = [];
+         $servicePurchaseData = [];
+         $packagePurchaseData = [];
+
+         // Fetch the data for each event type (Due Amount, Service Purchase, Package Purchase) for each month
+         foreach ($months as $month) {
+             // Due Amount for the selected year
+             $dueAmountData[] = Payment::where('status', 'completed')
+                 ->where('event', 'Due Amount')  // Using "event" field for the type of event
+                 ->whereBetween('paid_at', [
+                     now()->setYear($year)->month($months->search($month) + 1)->startOfMonth(),
+                     now()->setYear($year)->month($months->search($month) + 1)->endOfMonth()
+                 ])
+                 ->sum('amount');
+
+             // Service Purchase for the selected year
+             $servicePurchaseData[] = Payment::where('status', 'completed')
+                 ->where('event', 'Service Purchase')  // Using "event" field for the type of event
+                 ->whereBetween('paid_at', [
+                     now()->setYear($year)->month($months->search($month) + 1)->startOfMonth(),
+                     now()->setYear($year)->month($months->search($month) + 1)->endOfMonth()
+                 ])
+                 ->sum('amount');
+
+             // Package Purchase for the selected year
+             $packagePurchaseData[] = Payment::where('status', 'completed')
+                 ->where('event', 'Package Purchase')  // Using "event" field for the type of event
+                 ->whereBetween('paid_at', [
+                     now()->setYear($year)->month($months->search($month) + 1)->startOfMonth(),
+                     now()->setYear($year)->month($months->search($month) + 1)->endOfMonth()
+                 ])
+                 ->sum('amount');
+         }
+
+         // Prepare the final matrix with series data for chart
+         $adminMatrix = [
+             'new_clients' => $newClients,
+             'total_clients' => $totalClients,
+             'active_clients' => $activeClients,
+             'total_payments_amount' => $totalPaymentsAmount,
+             'year' => $year,
+             'series' => [
+                 [
+                     'name' => 'Due Amount',
+                     'data' => $dueAmountData
+                 ],
+                 [
+                     'name' => 'Service Purchase',
+                     'data' => $servicePurchaseData
+                 ],
+                 [
+                     'name' => 'Package Purchase',
+                     'data' => $packagePurchaseData
+                 ]
+             ],
+             'categories' => $months, // X-axis labels (months)
+         ];
+
+         return response()->json($adminMatrix);
+     }
+
+
+
 
 
 }
