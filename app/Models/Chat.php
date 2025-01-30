@@ -26,7 +26,7 @@ class Chat extends Model
     // Relationship with the User
     public function user()
     {
-        return $this->belongsTo(User::class)->select('id', 'name', 'profile_picture');
+        return $this->belongsTo(User::class)->select('id', 'client_id', 'name', 'profile_picture');
     }
 
     // Relationship with ChatMessages (renamed from 'replies')
