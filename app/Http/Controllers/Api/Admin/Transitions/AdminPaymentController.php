@@ -82,10 +82,17 @@ class AdminPaymentController extends Controller
         }
 
 
-        // Search by transaction_id if provided
+        // Search by client_id, name, email, or transaction_id if provided
         if ($request->has('search')) {
             $searchTerm = $request->input('search');
-            $query->where('transaction_id', 'like', '%' . $searchTerm . '%');
+            $query->where(function ($query) use ($searchTerm) {
+                $query->where('transaction_id', 'like', '%' . $searchTerm . '%')
+                    ->orWhereHas('user', function ($query) use ($searchTerm) {
+                        $query->where('client_id', 'like', '%' . $searchTerm . '%')
+                                ->orWhere('name', 'like', '%' . $searchTerm . '%')
+                                ->orWhere('email', 'like', '%' . $searchTerm . '%');
+                    });
+            });
         }
 
 
@@ -111,39 +118,39 @@ class AdminPaymentController extends Controller
             $servicePurchased = $payment->payable;
 
             // Initialize service_details and package_name
-    $serviceDetails = $servicePurchased ? $servicePurchased->formatted_service_details : null;
-    $packageName = null;
+            $serviceDetails = $servicePurchased ? $servicePurchased->formatted_service_details : null;
+            $packageName = null;
 
-    // Check if payable is a package and include package name in service_details
-    if ($payment->payable_type === 'App\\Models\\Package') {
-        $packageName = $servicePurchased->name ?? " "; // Get the package name
+            // Check if payable is a package and include package name in service_details
+            if ($payment->payable_type === 'App\\Models\\Package') {
+                $packageName = $servicePurchased->name ?? " "; // Get the package name
 
-        // If service_details is not already an array, initialize it
-        if (!is_array($serviceDetails)) {
-            $serviceDetails = [
-                'selected_services' => []
+                // If service_details is not already an array, initialize it
+                if (!is_array($serviceDetails)) {
+                    $serviceDetails = [
+                        'selected_services' => []
+                    ];
+                }
+
+                // Add the package name to the selected_services array
+                $serviceDetails['selected_services'][] = $packageName;
+            }
+
+            return [
+                'id' => $payment->id,
+                'transaction_id' => $payment->transaction_id,
+                'client_id' => $payment->user->client_id,
+                'name' => $payment->user->name,
+                'email' => $payment->user->email,
+                'profile_picture' => $payment->user->profile_picture,
+                'amount' => $payment->amount,
+                'paid_at' => $payment->paid_at,
+                'event' => $payment->event,
+                'status' => $payment->status,
+                'due_amount' => $servicePurchased ? $servicePurchased->due_amount : 0, // Add due_amount at root level
+                'service_details' => $serviceDetails, // Updated service_details with package name
+
             ];
-        }
-
-        // Add the package name to the selected_services array
-        $serviceDetails['selected_services'][] = $packageName;
-        }
-
-        return [
-            'id' => $payment->id,
-            'transaction_id' => $payment->transaction_id,
-            'client_id' => $payment->user->client_id,
-            'name' => $payment->user->name,
-            'email' => $payment->user->email,
-            'profile_picture' => $payment->user->profile_picture,
-            'amount' => $payment->amount,
-            'paid_at' => $payment->paid_at,
-            'event' => $payment->event,
-            'status' => $payment->status,
-            'due_amount' => $servicePurchased ? $servicePurchased->due_amount : 0, // Add due_amount at root level
-            'service_details' => $serviceDetails, // Updated service_details with package name
-
-        ];
         });
 
         return response()->json($transactions);

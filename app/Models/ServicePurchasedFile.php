@@ -27,6 +27,7 @@ class ServicePurchasedFile extends Model
         'date',        // New column
         'service_name',// New column
         'note',
+        'admin_id',
     ];
 
     // Relationship with ServicePurchased model
@@ -43,7 +44,7 @@ class ServicePurchasedFile extends Model
      * @param string $serviceName (name of the service)
      * @return \App\Models\ServicePurchasedFile
      */
-    public static function ServicePurchasedFileUpload($file, $servicePurchasedId,$userId,$note = null, $serviceName='')
+    public static function ServicePurchasedFileUpload($file, $servicePurchasedId, $userId, $note = null, $serviceName = '')
     {
         // Define the S3 directory
         $directory = 'service_purchased_files';
@@ -56,6 +57,12 @@ class ServicePurchasedFile extends Model
 
         // Determine the folder name based on who uploaded the file
         $folderName = self::getUploadedByFolderName();
+
+        // Get the admin ID if the file is uploaded by an admin
+        $adminId = null;
+        if (Auth::guard('admin')->check()) {
+            $adminId = Auth::guard('admin')->id();
+        }
 
         // Save file details to the database
         $servicePurchasedFile = self::create([
@@ -72,6 +79,7 @@ class ServicePurchasedFile extends Model
             'date' => $currentDate->day, // Set date
             'service_name' => $serviceName, // Set service name
             'note' => $note,
+            'admin_id' => $adminId, // Set admin ID if uploaded by admin
         ]);
 
         return $servicePurchasedFile;
