@@ -50,15 +50,13 @@ class ServicePurchased extends Model
 
     public static function getGroupedByStatus($userId, $status = null)
     {
-        // Fetch all ServicePurchased records for the user, excluding "pending" status
-        $query = self::where('user_id', $userId)->with('files')
+        // Start the query for ServicePurchased records for the given user, excluding "pending" status
+        $query = self::where('user_id', $userId)
+            ->with(['files.admin']) // Eager load both 'user' and 'admin' relations on 'files'
             ->where('status', '!=', 'pending') // Exclude "pending" status
-            // ->with(['user' => function ($query) {
-            //     $query->select(['id', 'name', 'client_id', 'email', 'phone']);
-            // }])
             ->latest();
 
-        // Apply status filter if provided
+        // Apply the status filter if provided
         if ($status) {
             $query->where('status', $status);
         }
@@ -66,7 +64,7 @@ class ServicePurchased extends Model
         // Get the results
         $servicePurchasedList = $query->get();
 
-        // Group records by status if no specific status is provided
+        // If no status filter was applied, group records by 'In Review' and others
         if (!$status) {
             $grouped = [
                 'in_review' => $servicePurchasedList->where('status', 'In Review')->values(),
@@ -78,6 +76,7 @@ class ServicePurchased extends Model
         // Return filtered results if a specific status is provided
         return $servicePurchasedList;
     }
+
 
 
     protected $hidden = ['service_details'];
@@ -123,7 +122,7 @@ class ServicePurchased extends Model
     public function files()
     {
         return $this->hasMany(ServicePurchasedFile::class)
-            ->select('file_name', 'file_path', 'file_size', 'service_purchased_id')->with('admin','user');
+            ->select('id','file_name', 'file_path', 'file_size', 'service_purchased_id','admin_id')->with('admin');
     }
 
 
