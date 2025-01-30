@@ -113,5 +113,32 @@ class AdminDashboardController extends Controller
          ]);
      }
 
+     public function getAdminMatrix()
+    {
+        // Get total number of users (clients)
+        $totalClients = User::count();
+
+        // Get new clients who registered in the last 7 days
+        $newClients = User::where('created_at', '>=', now()->subDays(7))->count();
+
+        // Get active clients (users who have services with status "In Review")
+        $activeClients = User::whereHas('servicePurchased', function ($query) {
+            $query->where('status', 'In Review');
+        })->count();
+
+        // Get total payment amount for completed payments
+        $totalPaymentsAmount = Payment::where('status', 'completed')->sum('amount'); // Only completed payments
+
+        // Return the matrix for the admin
+        $adminMatrix = [
+            'new_clients' => $newClients,
+            'total_clients' => $totalClients,
+            'active_clients' => $activeClients,
+            'total_payments_amount' => $totalPaymentsAmount,
+        ];
+
+        return response()->json($adminMatrix);
+    }
+
 
 }
