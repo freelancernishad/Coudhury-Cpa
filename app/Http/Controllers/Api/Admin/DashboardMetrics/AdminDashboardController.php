@@ -117,31 +117,31 @@ class AdminDashboardController extends Controller
      {
          // Get the year from the request, or default to the current year
          $year = $request->input('year', now()->year);
-     
+
          // Get total number of users (clients)
          $totalClients = User::count();
-     
+
          // Get new clients who registered in the last 7 days
          $newClients = User::where('created_at', '>=', now()->subDays(7))->count();
-     
+
          // Get active clients (users who have services with status "In Review")
          $activeClients = User::whereHas('servicePurchased', function ($query) {
              $query->where('status', 'In Review');
          })->count();
-     
+
          // Get total payment amount for completed payments
          $totalPaymentsAmount = (int) Payment::where('status', 'completed')->sum('amount'); // Only completed payments and cast to int
-     
+
          // Prepare months for the selected year (January to December)
          $months = collect(range(1, 12))->map(function ($month) use ($year) {
              return now()->setYear($year)->month($month)->format('F Y');
          });
-     
+
          // Initialize arrays to store the monthly data for each series
          $dueAmountData = [];
          $servicePurchaseData = [];
          $packagePurchaseData = [];
-     
+
          // Fetch the data for each event type (Due Amount, Service Purchase, Package Purchase) for each month
          foreach ($months as $month) {
              // Due Amount for the selected year
@@ -152,7 +152,7 @@ class AdminDashboardController extends Controller
                      now()->setYear($year)->month($months->search($month) + 1)->endOfMonth()
                  ])
                  ->sum('amount'); // Cast to int
-     
+
              // Service Purchase for the selected year
              $servicePurchaseData[] = (int) Payment::where('status', 'completed')
                  ->where('event', 'Service Purchase')  // Using "event" field for the type of event
@@ -161,7 +161,7 @@ class AdminDashboardController extends Controller
                      now()->setYear($year)->month($months->search($month) + 1)->endOfMonth()
                  ])
                  ->sum('amount'); // Cast to int
-     
+
              // Package Purchase for the selected year
              $packagePurchaseData[] = (int) Payment::where('status', 'completed')
                  ->where('event', 'Package Purchase')  // Using "event" field for the type of event
@@ -171,7 +171,15 @@ class AdminDashboardController extends Controller
                  ])
                  ->sum('amount'); // Cast to int
          }
-     
+
+
+             // Get the latest 10 registered users with selected fields
+        $latestUsers = User::select('name', 'profile_picture', 'client_id', 'status')
+        ->latest()
+        ->take(10)
+        ->get();
+
+
          // Prepare the final matrix with series data for chart
          $adminMatrix = [
              'new_clients' => $newClients,
@@ -179,6 +187,7 @@ class AdminDashboardController extends Controller
              'active_clients' => $activeClients,
              'total_payments_amount' => $totalPaymentsAmount,
              'year' => $year,
+             'latest_users' => $latestUsers,
              'series' => [
                  [
                      'name' => 'Due Amount',
@@ -195,10 +204,10 @@ class AdminDashboardController extends Controller
              ],
              'categories' => $months, // X-axis labels (months)
          ];
-     
+
          return response()->json($adminMatrix);
      }
-     
+
 
 
 
