@@ -37,6 +37,12 @@ class ServicePurchasedController extends Controller
         }
 
         // Handle user_id based on the guard
+        if (Auth::guard('admin')->check()) {
+            $query->where('status', 'In Review');
+        }
+
+
+
         if (Auth::guard('user')->check()) {
             // If the guard is 'user', get the user_id from the authenticated user
             $query->where('user_id', Auth::guard('user')->id());
