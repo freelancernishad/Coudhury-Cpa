@@ -328,4 +328,27 @@ class ServicePurchasedController extends Controller
     }
 
 
+
+    public function updateAdminPrivateNote(Request $request, $id)
+    {
+        // Validate the request data
+        $validated = $request->validate([
+            'admin_private_note' => 'required|string|max:255',
+        ]);
+
+        // Find the service purchased record by ID
+        $servicePurchased = ServicePurchased::findOrFail($id);
+
+        // Update the admin_private_note field
+        $servicePurchased->admin_private_note = $validated['admin_private_note'];
+        $servicePurchased->save();
+
+        // Return a successful response
+        return response()->json([
+            'message' => 'Admin Private note updated successfully.',
+            'service_purchased' => $servicePurchased
+        ]);
+    }
+
+
 }

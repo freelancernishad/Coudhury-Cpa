@@ -21,6 +21,7 @@ class ServicePurchased extends Model
         'status',
         'client_note',
         'admin_note',
+        'admin_private_note',
         'discount_amount',
         'service_details', // JSON column
     ];

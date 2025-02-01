@@ -189,6 +189,7 @@ Route::prefix('admin')->group(function () {
         Route::post('/upload-file', [ServicePurchasedFileController::class, 'uploadFiles']);
 
         Route::put('/{id}/update-admin-note', [ServicePurchasedController::class, 'updateAdminNote']);
+        Route::put('/{id}/update-admin-private-note', [ServicePurchasedController::class, 'updateAdminPrivateNote']);
     });
 
 
