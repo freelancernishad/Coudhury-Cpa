@@ -91,7 +91,7 @@ class UserController extends Controller
         $status = $request->query('status');
 
         // Get the user details
-        $user = User::where('client_id', $id)->first();
+        $user = User::where('client_id', $id)->with('userPackages.package')->first();
 
         // Check if the user exists
         if (!$user) {
