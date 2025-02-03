@@ -137,5 +137,35 @@ class Payment extends Model
 
 
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Generate a unique transaction_id before creating the payment
+        static::creating(function ($payment) {
+            if (empty($payment->transaction_id)) {
+                $payment->transaction_id = static::generateUniqueTransactionId();
+            }
+        });
+    }
+
+    /**
+     * Generate a unique transaction ID.
+     *
+     * @return string
+     */
+    public static function generateUniqueTransactionId()
+    {
+        $prefix = 'txn_'; // Prefix for the transaction ID
+        $timestamp = now()->format('YmdHis'); // Current date and time in YYYYMMDDHHMMSS format
+        $randomString = Str::random(3); // Random alphanumeric string of 6 characters
+
+        // Combine prefix, timestamp, and random string
+        $transactionId = $prefix . $timestamp . '_' . $randomString;
+
+        return $transactionId;
+    }
+
+
 
 }
