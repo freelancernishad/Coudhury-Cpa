@@ -8,6 +8,11 @@ class Package extends Model
 {
     protected $fillable = ['name', 'description', 'price', 'duration_days', 'features'];
 
+    public function getPriceAttribute($value)
+    {
+        return (int) $value;
+    }
+
     // Accessor to get features as an array
     public function getFeaturesAttribute($value)
     {
