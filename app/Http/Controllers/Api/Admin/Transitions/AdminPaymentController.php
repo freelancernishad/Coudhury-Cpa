@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin\Transitions;
 use App\Models\User;
 use App\Models\Payment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 
@@ -73,13 +74,24 @@ class AdminPaymentController extends Controller
             ]);
         }
 
-        // Apply date range filter based on `paid_at`
+
+
         if ($request->has('paid_start_date') && $request->has('paid_end_date')) {
-            $query->whereBetween('paid_at', [
-                $request->input('paid_start_date'),
-                $request->input('paid_end_date'),
-            ]);
+            $startDate = date('Y-m-d', strtotime($request->input('paid_start_date')));
+            $endDate = date('Y-m-d', strtotime($request->input('paid_end_date')));
+            Log::info($startDate);
+            Log::info($endDate);
+
+            $query->whereBetween('paid_at', [$startDate, $endDate]);
         }
+
+        // Apply date range filter based on `paid_at`
+        // if ($request->has('paid_start_date') && $request->has('paid_end_date')) {
+        //     $query->whereBetween('paid_at', [
+        //         $request->input('paid_start_date'),
+        //         $request->input('paid_end_date'),
+        //     ]);
+        // }
 
 
         // Search by client_id, name, email, or transaction_id if provided

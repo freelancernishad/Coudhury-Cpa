@@ -186,8 +186,9 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
      */
     public function servicePurchased()
     {
-        return $this->hasMany(ServicePurchased::class);
+        return $this->hasMany(ServicePurchased::class)->where('status', '!=', 'pending');
     }
+
 
     public function getServicePurchasedListAttribute()
     {
