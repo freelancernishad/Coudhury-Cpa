@@ -1,18 +1,19 @@
 <?php
+
 use Stripe\Stripe;
+use App\Models\User;
 use App\Models\Coupon;
 use App\Models\Package;
 use App\Models\Payment;
 use App\Models\PackageAddon;
 use Stripe\Checkout\Session;
-use App\Models\StripeCustomer;
-use App\Models\User;
 use App\Models\UserPackageAddon;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Validator;
 
 function createStripeCheckoutSession(array $data): JsonResponse
 {
+    // Default values for optional parameters
+    $discountMonths = $data['discountMonths'] ?? 0;
     $amount = $data['amount'] ?? 100;
     $currency = $data['currency'] ?? 'USD';
     $userId = $data['user_id'] ?? null;
@@ -21,10 +22,21 @@ function createStripeCheckoutSession(array $data): JsonResponse
     $payableId = $data['payable_id'] ?? null;
     $event = $data['event'] ?? '';
     $addonIds = $data['addon_ids'] ?? [];
-    $billingInterval = $data['billing_interval'] ?? 'one_time'; // Default to one-time payment
+    $isRecurring = $data['is_recurring'] ?? false;
     $baseSuccessUrl = $data['success_url'] ?? 'http://localhost:8000/stripe/payment/success';
     $baseCancelUrl = $data['cancel_url'] ?? 'http://localhost:8000/stripe/payment/cancel';
 
+
+    $interval = 'month';
+    $intervalCount = $discountMonths > 1 ? $discountMonths : 1;
+
+    if ($discountMonths == 12) {
+        $interval = 'year';
+        $intervalCount = 1;
+    }
+
+
+    // Initialize discount and final amount
     $discount = 0;
     $finalAmount = $amount;
 
@@ -39,176 +51,163 @@ function createStripeCheckoutSession(array $data): JsonResponse
         }
     }
 
+    // Ensure the final amount is greater than zero
     if ($finalAmount <= 0) {
         return response()->json(['error' => 'Payment amount must be greater than zero'], 400);
     }
-
-    // Create the payment record
-    $payment = Payment::create([
-        'user_id' => $userId,
-        'gateway' => 'stripe',
-        'amount' => $finalAmount,
-        'currency' => $currency,
-        'status' => 'pending',
-        'transaction_id' => uniqid(),
-        'payable_type' => $payableType,
-        'payable_id' => $payableId,
-        'coupon_id' => $couponId,
-        'event' => $event,
-        'billing_interval' => $billingInterval, // Store the billing interval
-    ]);
-
     try {
+        // Set Stripe API key
         Stripe::setApiKey(config('STRIPE_SECRET'));
+        Stripe::setApiVersion('2024-12-18.acacia');
 
-        // Success and Cancel URLs
-        $successUrl = "{$baseSuccessUrl}?payment_id={$payment->id}&session_id={CHECKOUT_SESSION_ID}";
-        $cancelUrl = "{$baseCancelUrl}?payment_id={$payment->id}&session_id={CHECKOUT_SESSION_ID}";
-
-        // Check if the user already has a Stripe Customer ID
-        $stripeCustomerId = null;
-        $stripeCustomer = StripeCustomer::where('user_id', $userId)->first();
-
-        if ($stripeCustomer) {
-            // Use existing Stripe Customer ID
-            $stripeCustomerId = $stripeCustomer->stripe_customer_id;
-        } else {
-
-
-            $user = User::find($userId);
-
-            // Create a new Stripe Customer
+        // Retrieve or create Stripe Customer
+        $user = User::find($userId);
+        if (!$user->stripe_customer_id) {
             $customer = \Stripe\Customer::create([
-                'email' => $user->email, // Use the authenticated user's email
-                'name' => $user->name, // Use the authenticated user's name
-                'metadata' => [
-                    'user_id' => $userId, // Store your internal user ID in metadata
-                ],
+                'email' => $user->email,
+                'name' => $user->name,
             ]);
-
-            // Save the Stripe Customer ID to your database
-            StripeCustomer::create([
-                'user_id' => $userId,
-                'stripe_customer_id' => $customer->id,
-            ]);
-
-            $stripeCustomerId = $customer->id;
+            $user->stripe_customer_id = $customer->id;
+            $user->save();
+        } else {
+            try {
+                // Verify if the existing Stripe customer ID is valid
+                \Stripe\Customer::retrieve($user->stripe_customer_id);
+            } catch (\Stripe\Exception\InvalidRequestException $e) {
+                // If the customer ID is invalid, create a new customer
+                if ($e->getHttpStatus() === 404) { // 404 means "Not Found"
+                    $customer = \Stripe\Customer::create([
+                        'email' => $user->email,
+                        'name' => $user->name,
+                    ]);
+                    $user->stripe_customer_id = $customer->id;
+                    $user->save();
+                } else {
+                    // Re-throw the exception if it's not a "Not Found" error
+                    throw $e;
+                }
+            }
         }
 
-        // Product details
-        $productName = 'Payment';
+        // Prepare success and cancel URLs
+        $successUrl = "{$baseSuccessUrl}?session_id={CHECKOUT_SESSION_ID}";
+        $cancelUrl = "{$baseCancelUrl}?session_id={CHECKOUT_SESSION_ID}";
+
+        // Prepare line items for the Checkout Session
         $lineItems = [];
 
-        // If payable_type is a package, adjust product name
-        if ($payableType === 'Package' && $payableId) {
+        // Add base package price to line items
+        if ($payableType === 'App\\Models\\Package' && $payableId) {
             $payable = Package::find($payableId);
             if ($payable) {
-                $productName = $payable->name;
-                $lineItems[] = [
-                    'price_data' => [
-                        'currency' => $currency,
-                        'product_data' => [
-                            'name' => $productName,
-                        ],
-                        'unit_amount' => $finalAmount * 100, // Amount in cents
+                // Create a Price object for the package
+                $price = \Stripe\Price::create([
+                    'currency' => $currency,
+                    'product_data' => [
+                        'name' => $payable->name,
                     ],
+                    'unit_amount' => $finalAmount * 100, // Amount in cents
+                    'recurring' => $isRecurring ? ['interval' => $interval, 'interval_count' => $intervalCount] : null,
+                ]);
+
+                // Add the Price ID to the line items
+                $lineItems[] = [
+                    'price' => $price->id, // Use the Price ID
                     'quantity' => 1,
                 ];
             }
-        } else {
-            $lineItems[] = [
-                'price_data' => [
-                    'currency' => $currency,
-                    'product_data' => [
-                        'name' => 'tax payment',
-                    ],
-                    'unit_amount' => $finalAmount * 100, // Amount in cents
-                ],
-                'quantity' => 1,
-            ];
         }
 
-        // Handle addons
+        // Add addons as additional line items
         $addonTotal = 0;
         if (!empty($addonIds)) {
             foreach ($addonIds as $addonId) {
                 $addon = PackageAddon::find($addonId);
                 if ($addon) {
-                    $lineItems[] = [
-                        'price_data' => [
-                            'currency' => $currency,
-                            'product_data' => [
-                                'name' => $addon->addon_name,
-                            ],
-                            'unit_amount' => $addon->price * 100, // Addon price in cents
+                    // Create a Price object for the addon
+                    $price = \Stripe\Price::create([
+                        'currency' => $currency,
+                        'product_data' => [
+                            'name' => $addon->addon_name,
                         ],
+                        'unit_amount' => $addon->price * 100, // Addon price in cents
+                        'recurring' => $isRecurring ? ['interval' => $interval, 'interval_count' => $intervalCount] : null,
+                    ]);
+
+                    // Add the Price ID to the line items
+                    $lineItems[] = [
+                        'price' => $price->id, // Use the Price ID
                         'quantity' => 1,
                     ];
                     $addonTotal += $addon->price;
                 }
             }
 
+            // Add the addon total to the final payment amount
             $finalAmount += $addonTotal;
-            createUserPackageAddons($userId, $payableId, $addonIds, $payment->id);
+
+            // Create user package addons
+            createUserPackageAddons($userId, $payableId, $addonIds, null); // Pass null for purchase_id (will be updated later)
         }
 
-        // Update the payment record with the final amount
-        $payment->update(['amount' => $finalAmount]);
+        // Step 1: Create a Checkout Session
+        $sessionData = [
+            'payment_method_types' => ['card', 'amazon_pay', 'us_bank_account'],
+            'mode' => $isRecurring ? 'subscription' : 'payment', // Use 'subscription' mode for recurring payments
+            'customer' => $user->stripe_customer_id,
+            'line_items' => $lineItems,
+            'success_url' => $successUrl,
+            'cancel_url' => $cancelUrl,
+            'subscription_data' => [
+                'metadata' => [
+                    'package_id' => $payableId, // Add package_id to subscription metadata
+                    'user_id' => $userId, // Optionally add user_id to metadata
+                ],
+            ],
+        ];
 
-        // Create Stripe session based on billing interval
-        if ($billingInterval === 'one_time') {
-            // One-time payment
-            $session = \Stripe\Checkout\Session::create([
-                'payment_method_types' => ['card', 'amazon_pay', 'us_bank_account'],
-                'line_items' => $lineItems,
-                'mode' => 'payment',
-                'success_url' => $successUrl,
-                'cancel_url' => $cancelUrl,
-                'customer' => $stripeCustomerId, // Associate the session with the Stripe Customer
-            ]);
-        } else {
-            // Recurring payment (monthly or yearly)
-            $stripeProduct = \Stripe\Product::create([
-                'name' => $productName,
-            ]);
+        // Create the Checkout Session
+        $session = \Stripe\Checkout\Session::create($sessionData);
 
-            $stripePrice = \Stripe\Price::create([
-                'product' => $stripeProduct->id,
-                'unit_amount' => $finalAmount * 100,
+
+
+
+
+
+
+        // Create a payment record only for one-time payments
+        if (!$isRecurring) {
+            $payment = Payment::create([
+                'user_id' => $userId,
+                'gateway' => 'stripe',
+                'amount' => $finalAmount,
                 'currency' => $currency,
-                'recurring' => [
-                    'interval' => $billingInterval, // 'month' or 'year'
-                ],
+                'status' => 'pending',
+                'session_id' => $session->id, // Use session ID as transaction ID
+                'payable_type' => $payableType,
+                'payable_id' => $payableId,
+                'coupon_id' => $couponId,
+                'is_recurring' => false,
             ]);
 
-            $session = \Stripe\Checkout\Session::create([
-                'payment_method_types' => ['card', 'amazon_pay', 'us_bank_account'],
-                'line_items' => [
-                    [
-                        'price' => $stripePrice->id,
-                        'quantity' => 1,
-                    ],
-                ],
-                'mode' => 'subscription',
+            // Update the session URL with the payment ID
+            $successUrl = "{$baseSuccessUrl}?payment_id={$payment->id}&session_id={CHECKOUT_SESSION_ID}";
+            $cancelUrl = "{$baseCancelUrl}?payment_id={$payment->id}&session_id={CHECKOUT_SESSION_ID}";
+
+            // Update the session with the new URLs
+            $session = \Stripe\Checkout\Session::update($session->id, [
                 'success_url' => $successUrl,
                 'cancel_url' => $cancelUrl,
-                'customer' => $stripeCustomerId, // Associate the session with the Stripe Customer
             ]);
         }
 
-        // Update the payment with the transaction ID and Stripe session ID
-        $payment->update([
-            'transaction_id' => uniqid(),
-            'stripe_session' => $session->id, // Add this line
-        ]);
-
+        // Return the Checkout Session URL
         return response()->json(['session_url' => $session->url]);
     } catch (\Exception $e) {
+        // Handle any exceptions
         return response()->json(['error' => $e->getMessage()], 500);
     }
 }
-
-
 
 /**
  * Create user_package_addons for a user based on selected addons.
@@ -216,18 +215,17 @@ function createStripeCheckoutSession(array $data): JsonResponse
  * @param int $userId
  * @param int $packageId
  * @param array $addonIds
- * @param int $purchaseId
+ * @param int|null $purchaseId
  * @return void
  */
-function createUserPackageAddons(int $userId, int $packageId, array $addonIds, int $purchaseId): void
+function createUserPackageAddons(int $userId, int $packageId, array $addonIds, $purchaseId): void
 {
     foreach ($addonIds as $addonId) {
-        // Create a record in the user_package_addons table for each addon with the associated purchase ID
         UserPackageAddon::create([
             'user_id' => $userId,
             'package_id' => $packageId,
             'addon_id' => $addonId,
-            'purchase_id' => $purchaseId,  // Link the purchase (payment) to the addon
+            'purchase_id' => $purchaseId,
         ]);
     }
 }

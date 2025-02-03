@@ -10,7 +10,18 @@ use Carbon\Carbon;
 
 class UserPackage extends Model
 {
-    protected $fillable = ['user_id', 'package_id', 'started_at', 'ends_at', 'business_name'];
+    protected $fillable = [
+            'user_id',
+            'package_id',
+            'started_at',
+            'ends_at',
+            'business_name',
+            'stripe_subscription_id',
+            'stripe_customer_id', 
+            'status',
+            'canceled_at',
+            'next_billing_at',
+        ];
 
     /**
      * The attributes that should be cast to native types.

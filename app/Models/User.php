@@ -34,6 +34,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         'phone',
         'business_type',
         'business_name',
+        'stripe_customer_id',
     ];
 
     /**
