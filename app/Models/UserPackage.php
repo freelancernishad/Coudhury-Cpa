@@ -17,7 +17,7 @@ class UserPackage extends Model
             'ends_at',
             'business_name',
             'stripe_subscription_id',
-            'stripe_customer_id', 
+            'stripe_customer_id',
             'status',
             'canceled_at',
             'next_billing_at',
@@ -169,7 +169,10 @@ class UserPackage extends Model
             ->orderBy('started_at', 'desc') // Order by start date (most recent first)
             ->get()
             ->map(function ($userPackage) {
-                return $userPackage->getFormattedDetails();
+                return array_merge($userPackage->getFormattedDetails(), [
+                    'renewal_amount' => $userPackage->package->price ?? 0, // Package price as renewal amount
+                    'next_payment_date' => $userPackage->next_billing_at ? Carbon::parse($userPackage->next_billing_at)->toDateString() : 'N/A',
+                ]);
             });
     }
 }
