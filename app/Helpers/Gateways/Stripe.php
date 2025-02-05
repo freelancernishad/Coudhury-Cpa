@@ -171,6 +171,11 @@ function createStripeCheckoutSession(array $data): JsonResponse
             }
         }
 
+        // Ensure there are line items before proceeding
+        if (empty($lineItems)) {
+            return response()->json(['error' => 'At least one line item is required.'], 400);
+        }
+
         // Step 1: Create a Checkout Session
         $sessionData = [
             'payment_method_types' => ['card', 'amazon_pay', 'us_bank_account'],
