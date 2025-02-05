@@ -150,6 +150,10 @@ function createStripeCheckoutSession(array $data): JsonResponse
             createUserPackageAddons($userId, $payableId, $addonIds, null); // Pass null for purchase_id (will be updated later)
         }
 
+
+
+
+
         // Step 1: Create a Checkout Session
         $sessionData = [
             'payment_method_types' => ['card', 'amazon_pay', 'us_bank_account'],
@@ -158,13 +162,19 @@ function createStripeCheckoutSession(array $data): JsonResponse
             'line_items' => $lineItems,
             'success_url' => $successUrl,
             'cancel_url' => $cancelUrl,
-            'subscription_data' => [
-                'metadata' => [
-                    'package_id' => $payableId, // Add package_id to subscription metadata
-                    'user_id' => $userId, // Optionally add user_id to metadata
-                ],
-            ],
+            // i want to add subscription_data with validation
         ];
+
+
+        // Validate and add subscription_data if it's a recurring payment
+        if ($isRecurring) {
+            $sessionData['subscription_data'] = [
+                'metadata' => [
+                    'package_id' => isset($payableId) ? $payableId : null, // Ensure $payableId is set
+                    'user_id' => isset($userId) ? $userId : null, // Ensure $userId is set
+                ],
+            ];
+        }
 
         // Create the Checkout Session
         $session = \Stripe\Checkout\Session::create($sessionData);
