@@ -184,6 +184,7 @@ function createStripeCheckoutSession(array $data): JsonResponse
             'cancel_url' => $cancelUrl,
         ];
 
+        return response()->json($sessionData);
         // Validate and add subscription_data if it's a recurring payment
         if ($isRecurring) {
             $sessionData['subscription_data'] = [
