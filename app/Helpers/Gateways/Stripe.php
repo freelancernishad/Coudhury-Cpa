@@ -152,16 +152,12 @@ function createStripeCheckoutSession(array $data): JsonResponse
         // return response()->json($event);
         // Add "Due Amount" if event is "Due Amount"
         if ($event === 'Due Amount') {
-            $dueAmount = $data['due_amount'] ?? 0; // Get the due amount from input data
-
-        return response()->json($dueAmount);
-            if ($dueAmount > 0) {
                 $price = \Stripe\Price::create([
                     'currency' => $currency,
                     'product_data' => [
                         'name' => 'Due Amount Payment',
                     ],
-                    'unit_amount' => $dueAmount * 100, // Convert to cents
+                    'unit_amount' => $amount * 100, // Convert to cents
                 ]);
 
                 $lineItems[] = [
@@ -169,8 +165,8 @@ function createStripeCheckoutSession(array $data): JsonResponse
                     'quantity' => 1,
                 ];
 
-                $finalAmount += $dueAmount;
-            }
+                $finalAmount += $amount;
+      
         }
 
         // Ensure there are line items before proceeding
