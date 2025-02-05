@@ -149,6 +149,7 @@ function createStripeCheckoutSession(array $data): JsonResponse
             createUserPackageAddons($userId, $payableId, $addonIds, null); // Pass null for purchase_id (will be updated later)
         }
 
+        return response()->json($event);
         // Add "Due Amount" if event is "Due Amount"
         if ($event === 'Due Amount') {
             $dueAmount = $data['due_amount'] ?? 0; // Get the due amount from input data
