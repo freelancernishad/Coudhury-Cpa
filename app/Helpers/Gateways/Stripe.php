@@ -91,6 +91,7 @@ function createStripeCheckoutSession(array $data): JsonResponse
         // Prepare success and cancel URLs
         $successUrl = "{$baseSuccessUrl}?session_id={CHECKOUT_SESSION_ID}";
         $cancelUrl = "{$baseCancelUrl}?session_id={CHECKOUT_SESSION_ID}";
+        
 
         // Prepare line items for the Checkout Session
         $lineItems = [];
