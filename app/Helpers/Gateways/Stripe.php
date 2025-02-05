@@ -26,7 +26,6 @@ function createStripeCheckoutSession(array $data): JsonResponse
     $baseSuccessUrl = $data['success_url'] ?? 'http://localhost:8000/stripe/payment/success';
     $baseCancelUrl = $data['cancel_url'] ?? 'http://localhost:8000/stripe/payment/cancel';
 
-
     $interval = 'month';
     $intervalCount = $discountMonths > 1 ? $discountMonths : 1;
 
@@ -34,7 +33,6 @@ function createStripeCheckoutSession(array $data): JsonResponse
         $interval = 'year';
         $intervalCount = 1;
     }
-
 
     // Initialize discount and final amount
     $discount = 0;
@@ -55,6 +53,7 @@ function createStripeCheckoutSession(array $data): JsonResponse
     if ($finalAmount <= 0) {
         return response()->json(['error' => 'Payment amount must be greater than zero'], 400);
     }
+
     try {
         // Set Stripe API key
         Stripe::setApiKey(config('STRIPE_SECRET'));
@@ -95,10 +94,6 @@ function createStripeCheckoutSession(array $data): JsonResponse
 
         // Prepare line items for the Checkout Session
         $lineItems = [];
-
-
-
-
 
         // Add base package price to line items
         if ($payableType === 'App\\Models\\Package' && $payableId) {
@@ -154,10 +149,10 @@ function createStripeCheckoutSession(array $data): JsonResponse
             createUserPackageAddons($userId, $payableId, $addonIds, null); // Pass null for purchase_id (will be updated later)
         }
 
-
+        // Add "Due Amount" if event is "Due Amount"
         if ($event === 'Due Amount') {
             $dueAmount = $data['due_amount'] ?? 0; // Get the due amount from input data
-        
+
             if ($dueAmount > 0) {
                 $price = \Stripe\Price::create([
                     'currency' => $currency,
@@ -166,16 +161,15 @@ function createStripeCheckoutSession(array $data): JsonResponse
                     ],
                     'unit_amount' => $dueAmount * 100, // Convert to cents
                 ]);
-        
+
                 $lineItems[] = [
                     'price' => $price->id, // Use the Price ID
                     'quantity' => 1,
                 ];
-        
+
                 $finalAmount += $dueAmount;
             }
         }
-
 
         // Step 1: Create a Checkout Session
         $sessionData = [
@@ -185,9 +179,7 @@ function createStripeCheckoutSession(array $data): JsonResponse
             'line_items' => $lineItems,
             'success_url' => $successUrl,
             'cancel_url' => $cancelUrl,
-            // i want to add subscription_data with validation
         ];
-
 
         // Validate and add subscription_data if it's a recurring payment
         if ($isRecurring) {
@@ -201,12 +193,6 @@ function createStripeCheckoutSession(array $data): JsonResponse
 
         // Create the Checkout Session
         $session = \Stripe\Checkout\Session::create($sessionData);
-
-
-
-
-
-
 
         // Create a payment record only for one-time payments
         if (!$isRecurring) {
