@@ -10,7 +10,7 @@ class Service extends Model
     use HasFactory;
 
     protected $fillable = ['name', 'slug', 'parent_id', 'input_label', 'price','is_select_multiple_child','is_add_on','is_state_select',
-    'is_need_appointment'];
+    'is_need_appointment','is_private'];
 
        /**
      * The "booted" method of the model.
@@ -47,7 +47,8 @@ class Service extends Model
      */
     public function parent()
     {
-        return $this->belongsTo(Service::class, 'parent_id');
+        return $this->belongsTo(Service::class, 'parent_id')
+            ->where('is_private', false); // Only return non-private parents
     }
 
     /**
@@ -55,9 +56,10 @@ class Service extends Model
      */
     public function children()
     {
-        return $this->hasMany(Service::class, 'parent_id')->with('children'); // Recursive relationship
+        return $this->hasMany(Service::class, 'parent_id')
+            ->where('is_private', false) // Only return non-private children
+            ->with('children'); // Recursive relationship
     }
-
     /**
      * Get all descendants of a service (including self).
      */
@@ -142,7 +144,7 @@ class Service extends Model
     {
         return (bool) $value; // Convert 0/1 to false/true
     }
-    
+
     public function getIsNeedAppointmentAttribute($value)
     {
         return (bool) $value; // Convert 0/1 to false/true

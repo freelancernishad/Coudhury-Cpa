@@ -49,6 +49,9 @@ Route::prefix('global/')->group(function () {
     Route::get('services', [AdminServicesController::class, 'index']);
 
 
+    Route::get('get/all/services', [AdminServicesController::class, 'allservices']);
+
+
     // Route to get ServicePurchased list with due amounts
     Route::get('/service-purchased/due-list', [ServicePurchasedDuePaymentController::class, 'getServicePurchasedList']);
 
