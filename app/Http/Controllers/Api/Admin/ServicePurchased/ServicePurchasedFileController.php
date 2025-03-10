@@ -26,7 +26,8 @@ class ServicePurchasedFileController extends Controller
         // Validate the request
         $validator = Validator::make($request->all(), [
             'files.*' => 'required|file', // Validate each file in the array
-            'service_purchased_id' => 'required|exists:service_purchased,id',
+            'service_purchased_id' => 'nullable|exists:service_purchased,id',
+            'user_id' => 'nullable|exists:users,id', // Add user_id validation
             'service_name' => 'nullable|string',
             'note' => 'nullable|string',
         ]);
@@ -35,15 +36,37 @@ class ServicePurchasedFileController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        // Fetch the user_id from the service_purchased table
-        $servicePurchasedId = $request->input('service_purchased_id');
-        $servicePurchased = ServicePurchased::find($servicePurchasedId);
+        // Fetch the user_id based on the authenticated guard
+        $userId = null;
 
-        if (!$servicePurchased) {
-            return response()->json(['message' => 'Service purchased record not found'], 404);
+        // Check if the authenticated guard is not 'admin'
+        if (auth()->guard('admin')->check()) {
+            // If the guard is 'admin', allow user_id to be set from the request
+            $userId = $request->input('user_id');
+        } else {
+            // If the guard is not 'admin', get the user_id from the authenticated user
+            $userId = auth()->id();
         }
 
-        $userId = $servicePurchased->user_id; // Get user_id from service_purchased
+        // Fetch service_purchased_id from the request
+        $servicePurchasedId = $request->input('service_purchased_id');
+
+        // If service_purchased_id is provided, fetch the user_id from the service_purchased table
+        if ($servicePurchasedId) {
+            $servicePurchased = ServicePurchased::find($servicePurchasedId);
+
+            if (!$servicePurchased) {
+                return response()->json(['message' => 'Service purchased record not found'], 404);
+            }
+
+            // Override user_id if service_purchased_id is provided
+            $userId = $servicePurchased->user_id;
+        }
+
+        // If user_id is still not set, return an error
+        if (!$userId) {
+            return response()->json(['message' => 'User ID is required'], 400);
+        }
 
         // Get additional data from the request
         $serviceName = $request->input('service_name');
@@ -71,7 +94,6 @@ class ServicePurchasedFileController extends Controller
             'files' => $uploadedFiles,
         ]);
     }
-
     /**
      * Get the list of files grouped by folder_name.
      *
