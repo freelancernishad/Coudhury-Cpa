@@ -95,7 +95,7 @@ Route::prefix('user')->group(function () {
 
 
         Route::get('/documents', [ServicePurchasedFileController::class, 'getFilesGroupedByFolder']);
-
+        Route::delete('/documents', [ServicePurchasedFileController::class, 'deleteFile']);
 
 
 

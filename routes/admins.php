@@ -205,6 +205,7 @@ Route::prefix('admin')->group(function () {
 
 
     Route::get('/documents', [ServicePurchasedFileController::class, 'getFilesGroupedByFolder']);
+    Route::delete('/documents', [ServicePurchasedFileController::class, 'deleteFile']);
     Route::get('/latest/documents', [ServicePurchasedFileController::class, 'getLatestUploadsGroupedByUserAndService']);
 
 

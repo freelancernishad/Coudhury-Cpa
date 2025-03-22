@@ -282,6 +282,35 @@ class ServicePurchasedFileController extends Controller
         return response()->json($response);
     }
 
+
+    public function deleteFile(Request $request)
+    {
+        // Validate the request
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:service_purchased_files,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        // Find the file
+        $file = ServicePurchasedFile::find($request->id);
+
+        if (!$file) {
+            return response()->json(['message' => 'File not found.'], 404);
+        }
+
+
+        // Delete the record from the database
+        $file->delete();
+
+        return response()->json(['message' => 'File deleted successfully.']);
+    }
+
+
+
+
     /**
      * Generate meaningful file counts grouped by file type.
      *
