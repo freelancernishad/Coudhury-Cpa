@@ -24,9 +24,12 @@ class UserController extends Controller
                   ->orWhere('id', 'LIKE', "%{$search}%")
                   ->orWhere('client_id', 'LIKE', "%{$search}%")
                   ->orWhere('email', 'LIKE', "%{$search}%")
-                  ->orWhere('business_name', 'LIKE', "%{$search}%"); // Add search for business_name
+                  ->orWhere('business_name', 'LIKE', "%{$search}%");
             });
         }
+
+        // Order by latest created users
+        $query->orderBy('created_at', 'desc');
 
         // Set dynamic pagination
         $perPage = $request->input('per_page', 10); // Default to 10 if not specified
@@ -34,6 +37,7 @@ class UserController extends Controller
 
         return response()->json($users);
     }
+
 
     // Create a new user
     public function store(Request $request)
