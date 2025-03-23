@@ -35,9 +35,11 @@ class CouponController extends Controller
 
         $validated = $request->all();
 
-        // Format valid_from and valid_until to ensure time is set to 00:00:00
-        $validated['valid_from'] = \Carbon\Carbon::parse($validated['valid_from'])->startOfDay()->toIso8601String();
-        $validated['valid_until'] = \Carbon\Carbon::parse($validated['valid_until'])->startOfDay()->toIso8601String();
+
+        // Format valid_from and valid_until using strtotime
+        $validated['valid_from'] = date('Y-m-d\T00:00:00', strtotime($validated['valid_from']));
+        $validated['valid_until'] = date('Y-m-d\T00:00:00', strtotime($validated['valid_until']));
+
 
         $coupon = Coupon::create($validated);
 
