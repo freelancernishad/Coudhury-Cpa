@@ -139,19 +139,33 @@ class CouponController extends Controller
             return response()->json(['message' => 'Coupon is not valid for the current date'], 400);
         }
 
-        $validAssociation = CouponAssociation::where('coupon_id', $coupon->id)
-            ->where(function ($query) use ($validated) {
-                if (isset($validated['user_id'])) {
-                    $query->where('item_id', $validated['user_id'])->where('item_type', 'user');
-                }
-                if (isset($validated['package_id'])) {
-                    $query->where('item_id', $validated['package_id'])->where('item_type', 'package');
-                }
-                if (isset($validated['service_id'])) {
-                    $query->where('item_id', $validated['service_id'])->where('item_type', 'service');
-                }
-            })
-            ->exists();
+        // Check associations only if user_id, package_id, or service_id is provided
+        $validAssociationQuery = CouponAssociation::where('coupon_id', $coupon->id);
+        $hasAssociationFilter = false;
+
+        if (!empty($validated['user_id'])) {
+            $validAssociationQuery->orWhere(function ($query) use ($validated) {
+                $query->where('item_id', $validated['user_id'])->where('item_type', 'user');
+            });
+            $hasAssociationFilter = true;
+        }
+
+        if (!empty($validated['package_id'])) {
+            $validAssociationQuery->orWhere(function ($query) use ($validated) {
+                $query->where('item_id', $validated['package_id'])->where('item_type', 'package');
+            });
+            $hasAssociationFilter = true;
+        }
+
+        if (!empty($validated['service_id'])) {
+            $validAssociationQuery->orWhere(function ($query) use ($validated) {
+                $query->where('item_id', $validated['service_id'])->where('item_type', 'service');
+            });
+            $hasAssociationFilter = true;
+        }
+
+        // Only check associations if any of the filters exist
+        $validAssociation = !$hasAssociationFilter || $validAssociationQuery->exists();
 
         if (!$validAssociation) {
             return response()->json(['message' => 'Coupon is not valid for the provided item'], 400);
@@ -164,7 +178,7 @@ class CouponController extends Controller
             $discount = $coupon->value;
         }
 
-        $discounted_total = $validated['order_total'] - $discount;
+        $discounted_total = max(0, $validated['order_total'] - $discount); // Ensure non-negative total
 
         CouponUsage::create([
             'coupon_id' => $coupon->id,
