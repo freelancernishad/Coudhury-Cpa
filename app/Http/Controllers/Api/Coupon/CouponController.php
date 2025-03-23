@@ -34,9 +34,14 @@ class CouponController extends Controller
         }
 
         $validated = $request->all();
+
+        // Format valid_from and valid_until to ensure time is set to 00:00:00
+        $validated['valid_from'] = \Carbon\Carbon::parse($validated['valid_from'])->startOfDay()->toIso8601String();
+        $validated['valid_until'] = \Carbon\Carbon::parse($validated['valid_until'])->startOfDay()->toIso8601String();
+
         $coupon = Coupon::create($validated);
 
-        if ($request->has('associations') && !empty($request->associations)) {
+        if (!empty($request->associations)) {
             foreach ($request->associations as $association) {
                 CouponAssociation::create([
                     'coupon_id' => $coupon->id,
@@ -51,6 +56,7 @@ class CouponController extends Controller
             'coupon' => $coupon
         ], 201);
     }
+
 
     // List all coupons
     public function index()
