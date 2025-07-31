@@ -22,6 +22,10 @@ if (file_exists($adminRoutes = __DIR__.'/admins.php')) {
     require $adminRoutes;
 }
 
+if (file_exists($studentRoutes = __DIR__.'/student.php')) {
+    require $studentRoutes;
+}
+
 if (file_exists($stripeRoutes = __DIR__.'/Gateways/stripe.php')) {
     require $stripeRoutes;
 }

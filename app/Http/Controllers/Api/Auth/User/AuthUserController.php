@@ -106,6 +106,10 @@ class AuthUserController extends Controller
         }
 
 
+        if ($request->identity_token) {
+            return handleAppleAuth($request);
+        }
+
 
 
 

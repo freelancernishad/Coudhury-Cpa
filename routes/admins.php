@@ -5,6 +5,7 @@ use App\Http\Middleware\AuthenticateAdmin;
 use App\Http\Controllers\Api\AllowedOriginController;
 use App\Http\Controllers\Api\Coupon\CouponController;
 use App\Http\Controllers\Api\Admin\Users\UserController;
+use App\Http\Controllers\Api\Admin\Student\CourseController;
 use App\Http\Controllers\Api\Auth\Admin\AdminAuthController;
 use App\Http\Controllers\Api\Admin\Chat\AdminChatApiController;
 use App\Http\Controllers\Api\Admin\Package\AdminPackageController;
@@ -207,6 +208,20 @@ Route::prefix('admin')->group(function () {
     Route::get('/documents', [ServicePurchasedFileController::class, 'getFilesGroupedByFolder']);
     Route::delete('/documents', [ServicePurchasedFileController::class, 'deleteFile']);
     Route::get('/latest/documents', [ServicePurchasedFileController::class, 'getLatestUploadsGroupedByUserAndService']);
+
+
+
+
+
+    Route::prefix('/')->group(function () {
+        Route::get('/courses', [CourseController::class, 'index']); // list
+        Route::post('/courses', [CourseController::class, 'store']); // create
+        Route::put('/courses/{id}', [CourseController::class, 'update']); // update
+        Route::delete('/courses/{id}', [CourseController::class, 'destroy']); // delete
+        Route::put('/courses/{id}/update-price', [CourseController::class, 'updatePrice']); // price update
+    });
+
+
 
 
 
