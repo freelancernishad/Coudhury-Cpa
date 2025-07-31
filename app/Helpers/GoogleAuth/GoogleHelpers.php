@@ -16,6 +16,7 @@ function handleGoogleAuth(Request $request)
     // Validate the access token
     $validator = Validator::make($request->all(), [
         'access_token' => 'required|string',
+        'role' => 'in:client,student',
     ]);
 
     if ($validator->fails()) {
@@ -39,12 +40,15 @@ function handleGoogleAuth(Request $request)
         $user = User::where('email', $userData['email'])->first();
 
         if (!$user) {
+
+              $role = $request->input('role', 'client');
             // Register the user if they don't exist
             $user = User::create([
                 'name' => $userData['name'] ?? explode('@', $userData['email'])[0],
                 'email' => $userData['email'],
                 'password' => Hash::make(Str::random(16)), // Generate a random password
                 'email_verified_at' => now(),
+                'role' => $role,
             ]);
         }else{
             $user->update(['email_verified_at'=> now()]);
@@ -57,6 +61,7 @@ function handleGoogleAuth(Request $request)
         $payload = [
             'email' => $user->email,
             'name' => $user->name,
+            'role' => $user->role,
             'category' => $user->category ?? 'default', // Assuming category might not be set for Google users
             'email_verified' => $user->hasVerifiedEmail(),
         ];
