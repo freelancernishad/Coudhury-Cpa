@@ -12,6 +12,7 @@ use Stripe\PaymentMethod;
 use App\Models\UserPackage;
 use Illuminate\Http\Request;
 use Stripe\Checkout\Session;
+use App\Models\CoursePurchase;
 use App\Models\StripeCustomer;
 use App\Models\ServicePurchased;
 use App\Models\UserPackageAddon;
@@ -98,6 +99,12 @@ class StripeController extends Controller
         try {
             // Verify webhook signature
             $event = Webhook::constructEvent($payload, $sig_header, $endpoint_secret);
+
+            $session = $event->data->object;
+            $paymentType = $session->metadata->payment_type ?? null;
+            if($paymentType === 'course_purchase'){
+                return $this->course_purchase($event);
+            }
 
             // Handle different event types
             switch ($event->type) {
@@ -186,22 +193,22 @@ class StripeController extends Controller
                     case 'invoice.payment_succeeded':
                         // Handle successful subscription payment
                         $invoice = $event->data->object;
-                    
+
                         // Find the UserPackage by Stripe subscription ID
                         $userPackage = UserPackage::where('stripe_subscription_id', $invoice->subscription)->first();
-                    
+
                         // If UserPackage does not exist, create it
                         if (!$userPackage) {
                             // Retrieve the Stripe subscription to get details
                             $stripeSubscription = \Stripe\Subscription::retrieve($invoice->subscription);
-                    
+
                             // Retrieve the package ID from the subscription metadata or other source
                             $packageId = $stripeSubscription->metadata->package_id ?? null;
-                    
+
                             // Retrieve the user ID from the Stripe customer
                             $stripeCustomer = \Stripe\Customer::retrieve($stripeSubscription->customer);
                             $user = User::where('stripe_customer_id', $stripeCustomer->id)->first();
-                    
+
                             if ($user && $packageId) {
                                 // Create a new UserPackage
                                 $userPackage = UserPackage::create([
@@ -218,22 +225,22 @@ class StripeController extends Controller
                                 return response()->json(['error' => 'User or package not found'], 400);
                             }
                         }
-                    
+
                         // Retrieve the charge ID from the invoice
                         $chargeId = $invoice->charge;
                         $paymentMethodDetails = null;
-                    
+
                         if ($chargeId) {
                             // Retrieve charge details from Stripe
                             $charge = \Stripe\Charge::retrieve($chargeId);
-                    
+
                             if (isset($charge->payment_method)) {
                                 // Retrieve the payment method
                                 $paymentMethod = \Stripe\PaymentMethod::retrieve($charge->payment_method);
                                 $paymentMethodDetails = $this->extractPaymentMethodDetails($paymentMethod);
                             }
                         }
-                    
+
                         // Create a new payment record for the successful charge
                         $payment = Payment::create([
                             'user_id'               => $userPackage->user_id,
@@ -250,19 +257,19 @@ class StripeController extends Controller
                             'response_data'         => json_encode($event),
                             'payment_method_details'=> json_encode($paymentMethodDetails), // Fixed this part
                         ]);
-                    
+
                         // Update the next billing date
                         $userPackage->update([
                             'next_billing_at' => Carbon::createFromTimestamp($invoice->lines->data[0]->period->end),
                         ]);
-                    
+
                         // Update UserPackageAddons with the payment ID
                         UserPackageAddon::where('user_id', $userPackage->user_id)
                             ->where('package_id', $userPackage->package_id)
                             ->update(['purchase_id' => $payment->id]);
-                    
+
                         break;
-                    
+
 
                     case 'invoice.payment_failed':
                         // Handle failed subscription payment
@@ -541,5 +548,119 @@ class StripeController extends Controller
             return response()->json(['error' => 'Error confirming PaymentIntent: ' . $e->getMessage()], 500);
         }
     }
+
+
+
+
+
+
+  /**
+     * Stripe Webhook Handler
+     */
+    public function course_purchase($event)
+    {
+
+
+
+        switch ($event->type) {
+
+            case 'checkout.session.completed':
+                $session = $event->data->object;
+
+                $userId = $session->metadata->user_id ?? null;
+                $courseId = $session->metadata->course_id ?? null;
+
+                if ($userId && $courseId) {
+                    $purchase = CoursePurchase::where('user_id', $userId)
+                        ->where('course_id', $courseId)
+                        ->first();
+
+                    if ($purchase && $purchase->status !== 'paid') {
+                        $course = $purchase->course;
+
+                        $purchase->status = 'paid';
+                        $purchase->stripe_payment_id = $session->payment_intent ?? null;
+                        $purchase->stripe_subscription_id = $session->subscription ?? null;
+                        $purchase->starts_at = now();
+                        $purchase->ends_at = $course->recurring_month > 0
+                            ? now()->addMonths($course->recurring_month)
+                            : null;
+                        $purchase->save();
+
+                        // Avoid duplicate payments
+                        if (!$purchase->payments()->where('stripe_payment_id', $session->payment_intent)->exists()) {
+                            $purchase->payments()->create([
+                                'stripe_payment_id' => $session->payment_intent ?? null,
+                                'amount' => $purchase->amount,
+                                'status' => 'paid',
+                                'paid_at' => now(),
+                            ]);
+                        }
+                    }
+                }
+                break;
+
+            case 'invoice.payment_succeeded':
+                $invoice = $event->data->object;
+                $subscriptionId = $invoice->subscription ?? null;
+
+                if ($subscriptionId) {
+                    $purchase = CoursePurchase::where('stripe_subscription_id', $subscriptionId)->first();
+
+                    if ($purchase) {
+                        $purchase->ends_at = now()->addMonths($purchase->course->recurring_month);
+                        $purchase->save();
+
+                        $purchase->payments()->create([
+                            'stripe_payment_id' => $invoice->payment_intent,
+                            'amount' => $invoice->amount_paid / 100,
+                            'status' => 'paid',
+                            'paid_at' => now(),
+                        ]);
+                    }
+                }
+                break;
+
+            case 'invoice.payment_failed':
+                $invoice = $event->data->object;
+                $subscriptionId = $invoice->subscription ?? null;
+
+                if ($subscriptionId) {
+                    $purchase = CoursePurchase::where('stripe_subscription_id', $subscriptionId)->first();
+
+                    if ($purchase) {
+                        $purchase->status = 'failed';
+                        $purchase->save();
+
+                        Log::warning("Payment failed for subscription ID: {$subscriptionId}");
+                    }
+                }
+                break;
+
+            case 'customer.subscription.deleted':
+                $subscription = $event->data->object;
+
+                $purchase = CoursePurchase::where('stripe_subscription_id', $subscription->id)->first();
+                if ($purchase) {
+                    $purchase->status = 'canceled';
+                    $purchase->ends_at = now();
+                    $purchase->save();
+
+                    Log::info("Subscription canceled for user ID: {$purchase->user_id}");
+                }
+                break;
+
+            default:
+                Log::info("Unhandled Stripe event type: {$event->type}");
+        }
+
+        return response('Webhook handled', 200);
+    }
+
+
+
+
+
+
 }
 

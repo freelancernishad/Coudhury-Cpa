@@ -5,6 +5,7 @@ use App\Http\Middleware\AuthenticateAdmin;
 use App\Http\Controllers\Api\AllowedOriginController;
 use App\Http\Controllers\Api\Coupon\CouponController;
 use App\Http\Controllers\Api\Admin\Users\UserController;
+use App\Http\Controllers\Admin\User\AdminStudentController;
 use App\Http\Controllers\Api\Admin\Student\CourseController;
 use App\Http\Controllers\Api\Auth\Admin\AdminAuthController;
 use App\Http\Controllers\Api\Admin\Chat\AdminChatApiController;
@@ -222,6 +223,11 @@ Route::prefix('admin')->group(function () {
     });
 
 
+
+
+        Route::get('/students', [AdminStudentController::class, 'index']); // student list
+        Route::get('/students/{id}/purchases', [AdminStudentController::class, 'purchases']); // course list for one student
+        Route::get('/students/{studentId}/purchases/{purchaseId}/payments', [AdminStudentController::class, 'purchasePayments']); // payments for one course
 
 
 

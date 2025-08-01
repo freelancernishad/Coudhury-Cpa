@@ -150,6 +150,12 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         return $this->hasMany(Payment::class);
     }
 
+    public function coursePurchases()
+    {
+        return $this->hasMany(\App\Models\CoursePurchase::class);
+    }
+
+
     /**
      * Get the last payment date of the user.
      *
