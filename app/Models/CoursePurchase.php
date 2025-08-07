@@ -41,6 +41,11 @@ class CoursePurchase extends Model
         return $this->hasMany(CoursePurchasePayment::class);
     }
 
+    public function notes()
+    {
+        return $this->hasMany(CourseNote::class);
+    }
+
     // Status helper methods
     public function isPaid(): bool
     {
