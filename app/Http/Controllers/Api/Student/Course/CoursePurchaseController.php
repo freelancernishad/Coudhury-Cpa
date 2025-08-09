@@ -19,6 +19,19 @@ class CoursePurchaseController extends Controller
     }
 
     /**
+     * Get all courses
+     */
+    public function getAllCourses()
+    {
+        $courses = Course::all();
+
+        return response()->json([
+            'courses' => $courses,
+        ]);
+    }
+
+
+    /**
      * Show course details
      */
     public function showCourse($id)

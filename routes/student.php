@@ -10,6 +10,8 @@ use App\Http\Controllers\Api\Student\Course\CoursePurchaseController;
 
 
 Route::middleware(AuthenticateUser::class)->prefix('student')->group(function () {
+
+
     Route::post('/courses/purchase', [CoursePurchaseController::class, 'purchase']);
 
 
@@ -31,4 +33,6 @@ Route::middleware(AuthenticateUser::class)->prefix('student')->group(function ()
 
 });
 
+    Route::get('/courses/list', [CoursePurchaseController::class, 'getAllCourses']);
+    Route::get('/courses/detials/{id}', [CoursePurchaseController::class, 'showCourse']);
 Route::post('/courses/webhook', [CoursePurchaseController::class, 'webhook']);
