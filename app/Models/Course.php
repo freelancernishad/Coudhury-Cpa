@@ -19,6 +19,9 @@ class Course extends Model
         'vat_tax_type',
         'vat_tax_value',
     ];
+    protected $casts = [
+        'recurring_month' => 'integer',
+    ];
 
     protected static function booted()
     {
