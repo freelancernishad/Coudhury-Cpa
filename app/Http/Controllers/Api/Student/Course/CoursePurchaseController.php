@@ -173,4 +173,27 @@ class CoursePurchaseController extends Controller
         ]);
     }
 
+
+        public function studentPayments(Request $request)
+        {
+            $user = $request->user();
+            $purchases = \App\Models\CoursePurchase::with('payments', 'course')
+                    ->where('status', 'paid')
+                ->where('user_id', $user->id)
+                ->get();
+
+            return response()->json([
+                'purchases' => $purchases->map(function ($purchase) {
+                    return [
+                        'id'   => $purchase->id ?? '',
+                        'course'   => $purchase->course->title ?? '',
+                        'amount'   => $purchase->amount,
+                        'status'   => $purchase->status,
+                        'payments' => $purchase->payments,
+                    ];
+                }),
+            ]);
+        }
+
+
 }

@@ -71,6 +71,7 @@ class AdminStudentController extends Controller
     public function studentPayments($studentId)
     {
         $purchases = \App\Models\CoursePurchase::with('payments', 'course')
+              ->where('status', 'paid')
             ->where('user_id', $studentId)
             ->get();
 
@@ -78,6 +79,7 @@ class AdminStudentController extends Controller
             'student_id' => $studentId,
             'purchases' => $purchases->map(function ($purchase) {
                 return [
+                    'id'   => $purchase->id ?? '',
                     'course'   => $purchase->course->title ?? '',
                     'amount'   => $purchase->amount,
                     'status'   => $purchase->status,
