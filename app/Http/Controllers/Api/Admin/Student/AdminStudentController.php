@@ -13,7 +13,11 @@ class AdminStudentController extends Controller
      */
     public function index(Request $request)
     {
-        $students = User::where('role', 'student')
+        $students = User::withCount('coursePurchases')
+            ->with(['coursePurchases' => function ($query) {
+                $query->orderByDesc('created_at');
+            }])
+            ->where('role', 'student')
             ->when($request->search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%$search%")
@@ -59,4 +63,28 @@ class AdminStudentController extends Controller
             'payments' => $purchase->payments,
         ]);
     }
+
+
+    /**
+     * Show all purchases and payments for a specific student
+     */
+    public function studentPayments($studentId)
+    {
+        $purchases = \App\Models\CoursePurchase::with('payments', 'course')
+            ->where('user_id', $studentId)
+            ->get();
+
+        return response()->json([
+            'student_id' => $studentId,
+            'purchases' => $purchases->map(function ($purchase) {
+                return [
+                    'course'   => $purchase->course->title ?? '',
+                    'amount'   => $purchase->amount,
+                    'status'   => $purchase->status,
+                    'payments' => $purchase->payments,
+                ];
+            }),
+        ]);
+    }
+
 }

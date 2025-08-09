@@ -152,7 +152,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
 
     public function coursePurchases()
     {
-        return $this->hasMany(\App\Models\CoursePurchase::class);
+        return $this->hasMany(\App\Models\CoursePurchase::class)->where('status', 'paid');
     }
 
 

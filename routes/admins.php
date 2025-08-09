@@ -10,10 +10,12 @@ use App\Http\Controllers\Api\Auth\Admin\AdminAuthController;
 use App\Http\Controllers\Api\Admin\Chat\AdminChatApiController;
 use App\Http\Controllers\Api\Admin\Package\AdminPackageController;
 use App\Http\Controllers\Api\Admin\Student\AdminStudentController;
+use App\Http\Controllers\Api\Admin\Student\CourseContentController;
 use App\Http\Controllers\Api\Admin\Services\AdminServicesController;
 use App\Http\Controllers\Api\SystemSettings\SystemSettingController;
 use App\Http\Controllers\Api\Admin\Blogs\Articles\ArticlesController;
 use App\Http\Controllers\Api\Admin\Blogs\Category\CategoryController;
+use App\Http\Controllers\Api\Admin\Student\AdminCourseNoteController;
 use App\Http\Controllers\Api\Admin\Transitions\AdminPaymentController;
 use App\Http\Controllers\Api\Admin\Package\AdminPurchasedHistoryController;
 use App\Http\Controllers\Api\Admin\PackageAddon\AdminPackageAddonController;
@@ -222,13 +224,34 @@ Route::prefix('admin')->group(function () {
     });
 
 
+    Route::prefix('/course-contents')->group(function () {
+        Route::get('{course_id}', [CourseContentController::class, 'index']);
+        Route::post('/', [CourseContentController::class, 'store']);
+        Route::get('show/{id}', [CourseContentController::class, 'show']);
+        Route::put('{id}', [CourseContentController::class, 'update']);
+        Route::delete('{id}', [CourseContentController::class, 'destroy']);
+    });
+
+
+
 
 
         Route::get('/students', [AdminStudentController::class, 'index']); // student list
         Route::get('/students/{id}/purchases', [AdminStudentController::class, 'purchases']); // course list for one student
+        Route::get('/students/all/payments/{studentId}', [AdminStudentController::class, 'studentPayments']); // payments for one course
+
         Route::get('/students/{studentId}/purchases/{purchaseId}/payments', [AdminStudentController::class, 'purchasePayments']); // payments for one course
 
 
+
+        // ✅ Admin Course Notes Routes
+        Route::prefix('/course-notes')->group(function () {
+            Route::get('{course_purchase_id}', [AdminCourseNoteController::class, 'index']);
+            Route::post('/', [AdminCourseNoteController::class, 'store']);
+            Route::get('show/{id}', [AdminCourseNoteController::class, 'show']);
+            Route::put('{id}', [AdminCourseNoteController::class, 'update']);
+            Route::delete('{id}', [AdminCourseNoteController::class, 'destroy']);
+        });
 
 
 
