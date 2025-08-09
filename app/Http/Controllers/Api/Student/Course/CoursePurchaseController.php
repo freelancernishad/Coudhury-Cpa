@@ -186,7 +186,8 @@ class CoursePurchaseController extends Controller
                 'purchases' => $purchases->map(function ($purchase) {
                     return [
                         'id'   => $purchase->id ?? '',
-                        'course'   => $purchase->course->title ?? '',
+                        'course_title'   => $purchase->course->title ?? '',
+                        'course'   => $purchase->course ?? [],
                         'amount'   => $purchase->amount,
                         'status'   => $purchase->status,
                         'payments' => $purchase->payments,
