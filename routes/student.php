@@ -19,7 +19,7 @@ Route::middleware(AuthenticateUser::class)->prefix('student')->group(function ()
             Route::get('/course-purchases', [CoursePurchaseController::class, 'index']);
             Route::get('/course-purchases/{id}', [CoursePurchaseController::class, 'show']);
             Route::get('/course-purchases/{id}/payments', [CoursePurchaseController::class, 'payments']);
-            Route::get('/all/payments/list', [CoursePurchaseController::class, 'studentPayments']);
+            Route::get('/get/all/payments/list', [CoursePurchaseController::class, 'studentPayments']);
 
 
             Route::prefix('/course/notes')->group(function () {
