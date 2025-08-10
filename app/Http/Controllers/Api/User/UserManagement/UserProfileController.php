@@ -37,9 +37,9 @@ class UserProfileController extends Controller
             'profile_picture' => 'sometimes|image|max:2048',
             // 'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
             'nid_no' => 'sometimes|string|max:255',
-            'address_line1' => 'sometimes|string|max:255',
-            'address_line2' => 'sometimes|string|max:255',
-            'phone' => 'sometimes|string|max:255',
+            'address_line1' => 'nullable|string|max:255',
+            'address_line2' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:255',
             'business_type' => 'sometimes|string|max:255', // Add validation for business_type
             'business_name' => 'sometimes|string|max:255', // Add validation for business_name
         ]);
