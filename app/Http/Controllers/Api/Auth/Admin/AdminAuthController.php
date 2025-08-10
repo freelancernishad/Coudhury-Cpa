@@ -27,6 +27,7 @@ class AdminAuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:admins',
             'password' => 'required|string|min:8|confirmed',
+            'role' => 'nullable|string|in:admin,Course Manager',
         ]);
 
         if ($validator->fails()) {
@@ -36,6 +37,7 @@ class AdminAuthController extends Controller
         $admin = Admin::create([
             'name' => $request->name,
             'email' => $request->email,
+            'role' => $request->role,
             'password' => Hash::make($request->password),
         ]);
 
@@ -43,6 +45,7 @@ class AdminAuthController extends Controller
         $payload = [
             'email' => $admin->email,
             'name' => $admin->name,
+            'role' => $admin->role,
             'email_verified' => $admin->hasVerifiedEmail(),
             // Add additional fields as necessary
         ];
