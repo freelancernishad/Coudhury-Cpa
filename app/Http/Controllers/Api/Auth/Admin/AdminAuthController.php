@@ -87,6 +87,7 @@ class AdminAuthController extends Controller
                 'email' => $admin->email,
                 'name' => $admin->name,
                 'email_verified' => $admin->hasVerifiedEmail(),
+                'role' => $admin->role,
                 // Add additional fields as necessary
             ];
 
