@@ -4,6 +4,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\AuthenticateUser;
 use App\Http\Controllers\Api\Student\Course\CourseNoteController;
+use App\Http\Controllers\Api\Admin\Student\CourseContentController;
 use App\Http\Controllers\Api\Student\Course\CoursePurchaseController;
 
 
@@ -37,3 +38,6 @@ Route::middleware(AuthenticateUser::class)->prefix('student')->group(function ()
     Route::get('/courses/list', [CoursePurchaseController::class, 'getAllCourses']);
     Route::get('/courses/detials/{id}', [CoursePurchaseController::class, 'showCourse']);
 Route::post('/courses/webhook', [CoursePurchaseController::class, 'webhook']);
+
+
+     Route::get('course-contents/{course_id}', [CourseContentController::class, 'index']);
