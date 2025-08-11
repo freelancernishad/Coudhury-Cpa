@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Api\Admin\Student;
 
-use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
 
 class AdminStudentController extends Controller
 {
+
+
     /**
      * Show all users with role 'student'
      */
@@ -31,6 +34,30 @@ class AdminStudentController extends Controller
             'students' => $students,
         ]);
     }
+
+
+    /**
+     * Show all users with role 'student'
+     */
+public function singleStudent($id)
+{
+    DB::listen(function ($query) {
+        logger($query->sql, $query->bindings);
+    });
+
+    $student = User::withCount('coursePurchases')
+    ->with(['coursePurchases.course', 'coursePurchases.course_payments'])
+        ->findOrFail($id);
+
+    return response()->json([
+        'student' => $student,
+    ]);
+}
+
+
+
+
+
 
     /**
      * Show course purchases for a specific student

@@ -23,7 +23,7 @@ class CoursePurchasePayment extends Model
 
     public function coursePurchase()
     {
-        return $this->belongsTo(CoursePurchase::class);
+        return $this->belongsTo(CoursePurchase::class, 'course_purchase_id');
     }
 
     // Status helper methods

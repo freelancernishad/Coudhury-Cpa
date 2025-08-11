@@ -236,11 +236,12 @@ Route::prefix('admin')->group(function () {
 
 
 
-        Route::get('/students', [AdminStudentController::class, 'index']); // student list
-        Route::get('/students/{id}/purchases', [AdminStudentController::class, 'purchases']); // course list for one student
-        Route::get('/students/all/payments/{studentId}', [AdminStudentController::class, 'studentPayments']); // payments for one course
+        Route::get('/students', [AdminStudentController::class, 'index']);
+        Route::get('/student/{id}', [AdminStudentController::class, 'singleStudent']);
+        Route::get('/students/{id}/purchases', [AdminStudentController::class, 'purchases']);
+        Route::get('/students/all/payments/{studentId}', [AdminStudentController::class, 'studentPayments']);
 
-        Route::get('/students/{studentId}/purchases/{purchaseId}/payments', [AdminStudentController::class, 'purchasePayments']); // payments for one course
+        Route::get('/students/{studentId}/purchases/{purchaseId}/payments', [AdminStudentController::class, 'purchasePayments']);
 
 
 
