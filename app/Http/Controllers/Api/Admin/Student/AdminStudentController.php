@@ -47,7 +47,7 @@ public function singleStudent($id)
 
     $student = User::withCount('coursePurchases')
     ->with(['coursePurchases.course', 'coursePurchases.course_payments'])
-        ->findOrFail($id);
+    ->where('client_id', $id)->first();
 
     return response()->json([
         'student' => $student,
