@@ -238,6 +238,7 @@ Route::prefix('admin')->group(function () {
 
         Route::get('/students', [AdminStudentController::class, 'index']);
         Route::get('/student/{id}', [AdminStudentController::class, 'singleStudent']);
+        Route::get('/get/all/payments', [AdminStudentController::class, 'getPaymentsWithCourseDetails']);
         Route::get('/students/{id}/purchases', [AdminStudentController::class, 'purchases']);
         Route::get('/students/all/payments/{studentId}', [AdminStudentController::class, 'studentPayments']);
 

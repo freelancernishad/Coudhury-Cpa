@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Models\CoursePurchasePayment;
 
 class AdminStudentController extends Controller
 {
@@ -39,23 +40,48 @@ class AdminStudentController extends Controller
     /**
      * Show all users with role 'student'
      */
-public function singleStudent($id)
-{
-    DB::listen(function ($query) {
-        logger($query->sql, $query->bindings);
-    });
+    public function singleStudent($id)
+    {
+        DB::listen(function ($query) {
+            logger($query->sql, $query->bindings);
+        });
 
-    $student = User::withCount('coursePurchases')
-    ->with(['coursePurchases.course', 'coursePurchases.course_payments'])
-    ->where('client_id', $id)->first();
+        $student = User::withCount('coursePurchases')
+        ->with(['coursePurchases.course', 'coursePurchases.course_payments'])
+        ->where('client_id', $id)->first();
 
-    return response()->json([
-        'student' => $student,
-    ]);
-}
+        return response()->json([
+            'student' => $student,
+        ]);
+    }
 
 
+    public function getPaymentsWithCourseDetails()
+    {
+        // Eager load coursePurchase and course inside coursePurchase
+        $payments = CoursePurchasePayment::with('coursePurchase.course')->get();
 
+        // Format the data as needed
+        $result = $payments->map(function ($payment) {
+            return [
+                'payment_id' => $payment->id,
+                'stripe_payment_id' => $payment->stripe_payment_id,
+                'amount' => $payment->amount,
+                'status' => $payment->status,
+                'paid_at' => $payment->paid_at,
+                'course_purchase_id' => $payment->course_purchase_id,
+                'course' => [
+                    'id' => $payment->coursePurchase->course->id ?? null,
+                    'title' => $payment->coursePurchase->course->title ?? 'N/A',
+                    'price' => $payment->coursePurchase->course->price ?? 0,
+                    'recurring_price' => $payment->coursePurchase->course->recurring_price ?? 0,
+                    'recurring_month' => $payment->coursePurchase->course->recurring_month ?? 0,
+                ],
+            ];
+        });
+
+        return response()->json($result);
+    }
 
 
 
