@@ -55,33 +55,46 @@ class AdminStudentController extends Controller
         ]);
     }
 
+   public function getPaymentsWithCourseDetails(Request $request)
+{
+    $perPage = $request->input('per_page', 10);
+    $search = $request->input('search'); // Optional filter
 
-    public function getPaymentsWithCourseDetails()
-    {
-        // Eager load coursePurchase and course inside coursePurchase
-        $payments = CoursePurchasePayment::with('coursePurchase.course')->get();
+    $paymentsQuery = CoursePurchasePayment::with('coursePurchase.course', 'coursePurchase.user');
 
-        // Format the data as needed
-        $result = $payments->map(function ($payment) {
-            return [
-                'payment_id' => $payment->id,
-                'stripe_payment_id' => $payment->stripe_payment_id,
-                'amount' => $payment->amount,
-                'status' => $payment->status,
-                'paid_at' => $payment->paid_at,
-                'course_purchase_id' => $payment->course_purchase_id,
-                'course' => [
-                    'id' => $payment->coursePurchase->course->id ?? null,
-                    'title' => $payment->coursePurchase->course->title ?? 'N/A',
-                    'price' => $payment->coursePurchase->course->price ?? 0,
-                    'recurring_price' => $payment->coursePurchase->course->recurring_price ?? 0,
-                    'recurring_month' => $payment->coursePurchase->course->recurring_month ?? 0,
-                ],
-            ];
+    // Filter by user email if provided
+    if ($search) {
+        $paymentsQuery->whereHas('coursePurchase.user', function ($query) use ($search) {
+            $query->where('email', 'like', "%{$search}%");
         });
-
-        return response()->json($result);
     }
+
+    $payments = $paymentsQuery->paginate($perPage);
+
+    // Transform each item in the collection
+    $payments->getCollection()->transform(function ($payment) {
+        return [
+            'payment_id' => $payment->id,
+            'email' => $payment->coursePurchase->user->email ?? null,
+            'stripe_payment_id' => $payment->stripe_payment_id,
+            'amount' => $payment->amount,
+            'status' => $payment->status,
+            'paid_at' => $payment->paid_at,
+            'course_purchase_id' => $payment->course_purchase_id,
+            'user_email' => $payment->coursePurchase->user->email ?? null,
+            'course' => [
+                'id' => $payment->coursePurchase->course->id ?? null,
+                'title' => $payment->coursePurchase->course->title ?? 'N/A',
+                'price' => $payment->coursePurchase->course->price ?? 0,
+                'recurring_price' => $payment->coursePurchase->course->recurring_price ?? 0,
+                'recurring_month' => $payment->coursePurchase->course->recurring_month ?? 0,
+            ],
+        ];
+    });
+
+    return response()->json($payments);
+}
+
 
 
 
