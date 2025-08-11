@@ -25,7 +25,8 @@ class AdminStudentController extends Controller
             ->when($request->search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%$search%")
-                      ->orWhere('email', 'like', "%$search%");
+                    ->where('client_id', 'like', "%$search%")
+                    ->orWhere('email', 'like', "%$search%");
                 });
             })
             ->orderByDesc('created_at')
