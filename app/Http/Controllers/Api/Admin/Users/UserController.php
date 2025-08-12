@@ -28,6 +28,7 @@ class UserController extends Controller
             });
         }
 
+        $query->where('role', 'client');
         // Order by latest created users
         $query->orderBy('created_at', 'desc');
 
