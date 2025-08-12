@@ -50,6 +50,13 @@ class CoursePurchase extends Model
     {
         return $this->hasMany(CoursePurchasePayment::class, 'course_purchase_id');
     }
+    public function payments()
+    {
+        return $this->hasMany(CoursePurchasePayment::class, 'course_purchase_id');
+    }
+
+
+
 
     // নতুন: সর্বশেষ পেইড পেমেন্ট রিলেশন
     public function lastPayment()
