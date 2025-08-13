@@ -56,6 +56,66 @@ class CourseContentController extends Controller
     }
 
 
+    public function getStudentsByContent($contentId)
+{
+    $content = CourseContent::with('students')->findOrFail($contentId);
+
+    return response()->json([
+        'content_id' => $content->id,
+        'content_name' => $content->name,
+        'total_students' => $content->students->count(),
+        'students' => $content->students
+    ]);
+}
+
+
+
+
+        // 2️⃣ Assign Students to Existing Content
+    public function assignStudents(Request $request, $contentId)
+    {
+        $validator = Validator::make($request->all(), [
+            'students' => 'required|array|min:1',
+            'students.*' => 'exists:users,id'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $content = CourseContent::findOrFail($contentId);
+
+        // আগের সাথে merge হয়ে যাবে
+        $content->students()->syncWithoutDetaching($request->students);
+
+        return response()->json([
+            'message' => 'Students assigned successfully',
+            'content' => $content->load('students')
+        ]);
+    }
+
+    // 3️⃣ Remove Students from Content
+    public function removeStudents(Request $request, $contentId)
+    {
+        $validator = Validator::make($request->all(), [
+            'students' => 'required|array|min:1',
+            'students.*' => 'exists:users,id'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $content = CourseContent::findOrFail($contentId);
+
+        $content->students()->detach($request->students);
+
+        return response()->json([
+            'message' => 'Students removed successfully',
+            'content' => $content->load('students')
+        ]);
+    }
+
 
 
     // Update content
