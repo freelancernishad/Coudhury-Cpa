@@ -18,11 +18,16 @@ class CourseContent extends Model
         'file_path'
     ];
 
+    protected $appends = ['students_count'];
     public function course()
     {
         return $this->belongsTo(Course::class);
     }
-
+    // Accessor for students_count
+    public function getStudentsCountAttribute()
+    {
+        return $this->students()->count();
+    }
     public function students()
     {
         return $this->belongsToMany(User::class, 'course_content_user');
