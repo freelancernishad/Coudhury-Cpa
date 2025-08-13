@@ -17,6 +17,8 @@ class CourseContentController extends Controller
         return response()->json($contents);
     }
 
+
+
     // Store new content
     public function store(Request $request)
     {
@@ -26,6 +28,8 @@ class CourseContentController extends Controller
             'description' => 'nullable|string',
             'link' => 'nullable|url',
             'file' => 'nullable|file|max:10240', // 10MB
+            'students' => 'nullable|array',
+            'students.*' => 'exists:users,id' // প্রতিটি student আইডি valid কিনা
         ]);
 
         if ($validator->fails()) {
@@ -39,9 +43,20 @@ class CourseContentController extends Controller
         }
 
         $content = CourseContent::create($data);
+        // যদি students array থাকে তাহলে attach করো
+        if (!empty($request->students)) {
+            $content->students()->attach($request->students);
+        }
 
-        return response()->json(['message' => 'Course content created successfully', 'content' => $content], 201);
+        return response()->json([
+            'message' => 'Course content created successfully',
+            'content' => $content->load('students') // students relationship সহ রিটার্ন করব
+        ], 201);
+
     }
+
+
+
 
     // Update content
     public function update(Request $request, $id)

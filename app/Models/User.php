@@ -156,6 +156,14 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
     }
 
 
+    public function courseContents()
+    {
+        return $this->belongsToMany(CourseContent::class, 'course_content_user');
+    }
+
+
+
+
     /**
      * Get the last payment date of the user.
      *
