@@ -33,5 +33,19 @@ class CourseContent extends Model
         return $this->belongsToMany(User::class, 'course_content_user');
     }
 
+      /**
+     * Save file to S3 and update file_path column.
+     *
+     * @param \Illuminate\Http\UploadedFile $file
+     * @return string $filePath
+     */
+    public function saveFile($file)
+    {
+        $filePath = uploadFileToS3($file, 'course_contents'); // S3 folder name
+        $this->file_path = $filePath;
+        $this->save();
+
+        return $filePath;
+    }
 
 }

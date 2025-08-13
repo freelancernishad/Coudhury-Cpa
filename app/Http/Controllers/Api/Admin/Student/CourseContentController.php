@@ -38,11 +38,22 @@ class CourseContentController extends Controller
 
         $data = $request->only(['course_id', 'name', 'description', 'link']);
 
-        if ($request->hasFile('file')) {
-            $data['file_path'] = $request->file('file')->store('course_contents');
-        }
+
+
+
+
+
 
         $content = CourseContent::create($data);
+
+
+        // যদি ফাইল থাকে তাহলে saveFile() ব্যবহার করো
+        if ($request->hasFile('file')) {
+            $content->saveFile($request->file('file')); // S3 upload + file_path update
+        }
+
+
+
         // যদি students array থাকে তাহলে attach করো
         if (!empty($request->students)) {
             $content->students()->attach($request->students);
