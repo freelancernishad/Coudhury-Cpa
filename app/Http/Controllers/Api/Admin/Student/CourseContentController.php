@@ -56,17 +56,23 @@ class CourseContentController extends Controller
     }
 
 
-    public function getStudentsByContent($contentId)
+public function getStudentsByContent($contentId)
 {
-    $content = CourseContent::with('students')->findOrFail($contentId);
+    $content = CourseContent::findOrFail($contentId);
+
+    // শুধু নির্দিষ্ট ফিল্ড নিয়ে students লোড করবো
+    $students = $content->students()
+        ->select('users.id', 'users.client_id', 'users.name', 'users.email', 'users.profile_picture')
+        ->get();
 
     return response()->json([
         'content_id' => $content->id,
         'content_name' => $content->name,
-        'total_students' => $content->students->count(),
-        'students' => $content->students
+        'total_students' => $students->count(),
+        'students' => $students
     ]);
 }
+
 
 
 
