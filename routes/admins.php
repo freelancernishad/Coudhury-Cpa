@@ -231,6 +231,9 @@ Route::prefix('admin')->group(function () {
         Route::put('{id}', [CourseContentController::class, 'update']);
         Route::delete('{id}', [CourseContentController::class, 'destroy']);
 
+        Route::get('/{id}/students', [CourseContentController::class, 'getStudentsByContent']);
+
+
         Route::post('/{id}/assign-students', [CourseContentController::class, 'assignStudents']);
         Route::post('/{id}/remove-students', [CourseContentController::class, 'removeStudents']);
 
