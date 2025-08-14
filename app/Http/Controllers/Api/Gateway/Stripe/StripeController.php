@@ -644,7 +644,7 @@ class StripeController extends Controller
                         $purchase->status = 'failed';
                         $purchase->save();
 
-                        \Log::warning("Payment failed for subscription ID: {$subscriptionId}");
+                        Log::warning("Payment failed for subscription ID: {$subscriptionId}");
                     }
                 }
                 break;
@@ -658,12 +658,12 @@ class StripeController extends Controller
                     $purchase->ends_at = now();
                     $purchase->save();
 
-                    \Log::info("Subscription canceled for user ID: {$purchase->user_id}");
+                    Log::info("Subscription canceled for user ID: {$purchase->user_id}");
                 }
                 break;
 
             default:
-                \Log::info("Unhandled Stripe event type: {$event->type}");
+                Log::info("Unhandled Stripe event type: {$event->type}");
         }
 
         return response('Webhook handled', 200);
