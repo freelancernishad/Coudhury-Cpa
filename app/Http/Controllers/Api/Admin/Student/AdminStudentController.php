@@ -43,9 +43,9 @@ class AdminStudentController extends Controller
      */
     public function singleStudent($id)
     {
-        DB::listen(function ($query) {
-            logger($query->sql, $query->bindings);
-        });
+        // DB::listen(function ($query) {
+        //     logger($query->sql, $query->bindings);
+        // });
 
         $student = User::withCount('coursePurchases')
             ->with([
