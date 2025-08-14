@@ -15,34 +15,29 @@ class AdminStudentController extends Controller
     /**
      * Show all users with role 'student'
      */
-    public function index(Request $request)
-    {
-        $students = User::withCount('coursePurchases')
-            ->with(['coursePurchases' => function ($query) {
-                $query->orderByDesc('created_at');
-            }])
-            ->where('role', 'student');
+public function index(Request $request)
+{
+    $students = User::withCount('coursePurchases')
+        ->with(['coursePurchases' => function ($query) {
+            $query->orderByDesc('created_at');
+        }])
+        ->where('role', 'student');
 
-
-            if($request->has('search')) {
-                $search = $request->input('search');
-                $students->where(function ($query) use ($search) {
-                    $query->where('name', 'like', "%{$search}%")
-                          ->orWhere('client_id', 'like', "%{$search}%")
-                          ->orWhere('email', 'like', "%{$search}%");
-                });
-            }
-
-
-
-
-            $students->orderByDesc('created_at')
-            ->paginate(20);
-
-        return response()->json([
-            'students' => $students,
-        ]);
+    if ($request->has('search')) {
+        $search = $request->input('search');
+        $students->where(function ($query) use ($search) {
+            $query->where('name', 'like', "%{$search}%")
+                ->orWhere('client_id', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%");
+        });
     }
+
+    $students = $students->orderByDesc('created_at')->paginate(20);
+
+    return response()->json([
+        'students' => $students
+    ]);
+}
 
 
     /**
