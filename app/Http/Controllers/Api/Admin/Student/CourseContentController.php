@@ -78,22 +78,29 @@ public function index(Request $request, $course_id)
     }
 
 
-public function getStudentsByContent($contentId)
-{
-    $content = CourseContent::findOrFail($contentId);
+    public function getStudentsByContent(Request $request, $contentId)
+    {
+        $perPage = $request->query('per_page', 10); // ডিফল্ট 10 টি
 
-    // শুধু নির্দিষ্ট ফিল্ড নিয়ে students লোড করবো
-    $students = $content->students()
-        ->select('users.id', 'users.client_id', 'users.name', 'users.email', 'users.profile_picture')
-        ->get();
+        $content = CourseContent::findOrFail($contentId);
 
-    return response()->json([
-        'content_id' => $content->id,
-        'content_name' => $content->name,
-        'total_students' => $students->count(),
-        'students' => $students
-    ]);
-}
+        $students = $content->students()
+            ->select('users.id', 'users.client_id', 'users.name', 'users.email', 'users.profile_picture')
+            ->paginate($perPage);
+
+        return response()->json([
+            'content_id' => $content->id,
+            'content_name' => $content->name,
+            'total_students' => $students->total(),
+            'students' => $students->items(),
+            'pagination' => [
+                'current_page' => $students->currentPage(),
+                'per_page' => $students->perPage(),
+                'last_page' => $students->lastPage(),
+                'total' => $students->total(),
+            ]
+        ]);
+    }
 
 
 
