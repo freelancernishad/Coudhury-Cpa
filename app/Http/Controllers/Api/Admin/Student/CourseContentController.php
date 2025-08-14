@@ -11,9 +11,15 @@ use Illuminate\Support\Facades\Validator;
 class CourseContentController extends Controller
 {
     // Get all contents for a course
-    public function index($course_id)
+    public function index(Request $request, $course_id)
     {
-        $contents = CourseContent::where('course_id', $course_id)->latest()->get();
+        // Get per_page from query, default to 10 if not provided
+        $perPage = $request->query('per_page', 10);
+
+        $contents = CourseContent::where('course_id', $course_id)
+            ->latest()
+            ->paginate($perPage);
+
         return response()->json($contents);
     }
 
@@ -136,7 +142,7 @@ public function getStudentsByContent($contentId)
 
 
     // Update content
-    public function update(Request $request, $id)
+   public function update(Request $request, $id)
     {
         $content = CourseContent::findOrFail($id);
 
@@ -144,35 +150,37 @@ public function getStudentsByContent($contentId)
             'name' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'link' => 'nullable|url',
-            'file' => 'nullable|file|max:10240',
+            'file' => 'nullable|file|max:10240', // 10MB
+            'students' => 'nullable|array',
+            'students.*' => 'exists:users,id'
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        if ($request->has('name')) {
-            $content->name = $request->name;
-        }
+        // Update basic fields if present
+        $content->fill($request->only(['name', 'description', 'link']));
 
-        if ($request->has('description')) {
-            $content->description = $request->description;
-        }
-
-        if ($request->has('link')) {
-            $content->link = $request->link;
-        }
-
+        // Handle file upload
         if ($request->hasFile('file')) {
             if ($content->file_path && Storage::exists($content->file_path)) {
                 Storage::delete($content->file_path);
             }
-            $content->file_path = $request->file('file')->store('course_contents');
+            $content->saveFile($request->file('file')); // Assuming saveFile() handles S3 upload and updates file_path
         }
 
         $content->save();
 
-        return response()->json(['message' => 'Course content updated successfully', 'content' => $content]);
+        // Sync students if provided
+        if ($request->has('students')) {
+            $content->students()->sync($request->students);
+        }
+
+        return response()->json([
+            'message' => 'Course content updated successfully',
+            'content' => $content->load('students')
+        ]);
     }
 
     // Delete content
