@@ -229,6 +229,7 @@ Route::prefix('admin')->group(function () {
         Route::post('/', [CourseContentController::class, 'store']);
         Route::get('show/{id}', [CourseContentController::class, 'show']);
         Route::put('{id}', [CourseContentController::class, 'update']);
+        Route::post('{id}', [CourseContentController::class, 'update']);
         Route::delete('{id}', [CourseContentController::class, 'destroy']);
 
         Route::get('/{id}/students', [CourseContentController::class, 'getStudentsByContent']);
