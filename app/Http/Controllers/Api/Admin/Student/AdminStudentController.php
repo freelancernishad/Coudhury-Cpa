@@ -69,7 +69,7 @@ public function index(Request $request)
     $perPage = $request->input('per_page', 10);
     $search = $request->input('search'); // Optional filter
 
-    $paymentsQuery = CoursePurchasePayment::with('coursePurchase.course', 'coursePurchase.user');
+    $paymentsQuery = CoursePurchasePayment::with('coursePurchase.course', 'coursePurchase.user')->where('status', 'paid');
 
     // Filter by user email if provided
     if ($search) {
