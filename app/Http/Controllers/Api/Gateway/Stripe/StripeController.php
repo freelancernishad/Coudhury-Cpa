@@ -587,6 +587,18 @@ class StripeController extends Controller
                             : null;
                         $purchase->save();
 
+                        // ✅ Auto cancel_at সেট করা (recurring_month অনুযায়ী)
+                        if ($session->subscription && $course->recurring_month > 0) {
+                            $subscription = \Stripe\Subscription::retrieve($session->subscription);
+
+                            // recurring_month - 1 কারণ প্রথম মাস checkout-এর সময়ই হয়ে যায়
+                            $cancelAt = strtotime('+' . ($course->recurring_month - 1) . ' months', $subscription->current_period_end);
+
+                            \Stripe\Subscription::update($session->subscription, [
+                                'cancel_at' => $cancelAt
+                            ]);
+                        }
+
                         // Avoid duplicate payments
                         if (!$purchase->payments()->where('stripe_payment_id', $session->payment_intent)->exists()) {
                             $purchase->payments()->create([
@@ -632,7 +644,7 @@ class StripeController extends Controller
                         $purchase->status = 'failed';
                         $purchase->save();
 
-                        Log::warning("Payment failed for subscription ID: {$subscriptionId}");
+                        \Log::warning("Payment failed for subscription ID: {$subscriptionId}");
                     }
                 }
                 break;
@@ -646,12 +658,12 @@ class StripeController extends Controller
                     $purchase->ends_at = now();
                     $purchase->save();
 
-                    Log::info("Subscription canceled for user ID: {$purchase->user_id}");
+                    \Log::info("Subscription canceled for user ID: {$purchase->user_id}");
                 }
                 break;
 
             default:
-                Log::info("Unhandled Stripe event type: {$event->type}");
+                \Log::info("Unhandled Stripe event type: {$event->type}");
         }
 
         return response('Webhook handled', 200);

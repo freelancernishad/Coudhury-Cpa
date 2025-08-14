@@ -87,7 +87,8 @@ class CoursePurchaseController extends Controller
                 'metadata' => [
                     'user_id' => $user->id,
                     'course_id' => $course->id,
-                     'payment_type' => 'course_purchase',
+                    'payment_type' => 'course_purchase',
+                    'recurring_limit' => $course->recurring_month,
                 ],
             ]);
 
