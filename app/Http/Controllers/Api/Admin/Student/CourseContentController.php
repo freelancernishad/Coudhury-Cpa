@@ -2,23 +2,26 @@
 // app/Http/Controllers/Api/Admin/Student/CourseContentController.php
 namespace App\Http\Controllers\Api\Admin\Student;
 
-use App\Http\Controllers\Controller;
-use App\Models\CourseContent;
 use Illuminate\Http\Request;
+use App\Models\CourseContent;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class CourseContentController extends Controller
 {
     // Get all contents for a course
+
 public function index(Request $request, $course_id)
 {
     $perPage = $request->query('per_page', 10);
-    $search = $request->query('search'); // search keyword
+    $search = $request->query('search');
 
-    $query = CourseContent::where('course_id', $course_id);
+    $query = Auth::user()
+        ->courseContents()
+        ->where('course_id', $course_id);
 
-    // যদি search থাকে তাহলে name filter করা হবে
     if ($search) {
         $query->where('name', 'like', "%{$search}%");
     }
