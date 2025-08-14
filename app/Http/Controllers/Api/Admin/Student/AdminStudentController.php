@@ -48,13 +48,19 @@ class AdminStudentController extends Controller
         });
 
         $student = User::withCount('coursePurchases')
-        ->with(['coursePurchases.course', 'coursePurchases.course_payments'])
-        ->where('client_id', $id)->first();
+            ->with([
+                'coursePurchases.course',
+                'coursePurchases.course_payments',
+                'courseContents', // <-- add this line
+            ])
+            ->where('client_id', $id)
+            ->first();
 
         return response()->json([
             'student' => $student,
         ]);
     }
+
 
    public function getPaymentsWithCourseDetails(Request $request)
 {
