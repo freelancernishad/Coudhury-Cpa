@@ -21,15 +21,22 @@ class AdminStudentController extends Controller
             ->with(['coursePurchases' => function ($query) {
                 $query->orderByDesc('created_at');
             }])
-            ->where('role', 'student')
-            ->when($request->search, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%$search%")
-                    ->where('client_id', 'like', "%$search%")
-                    ->orWhere('email', 'like', "%$search%");
+            ->where('role', 'student');
+
+
+            if($request->has('search')) {
+                $search = $request->input('search');
+                $students->where(function ($query) use ($search) {
+                    $query->where('name', 'like', "%{$search}%")
+                          ->orWhere('client_id', 'like', "%{$search}%")
+                          ->orWhere('email', 'like', "%{$search}%");
                 });
-            })
-            ->orderByDesc('created_at')
+            }
+
+
+
+
+            $students->orderByDesc('created_at')
             ->paginate(20);
 
         return response()->json([
