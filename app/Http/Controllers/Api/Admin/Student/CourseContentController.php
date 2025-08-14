@@ -13,34 +13,40 @@ class CourseContentController extends Controller
 {
     // Get all contents for a course
 
-    public function index(Request $request, $course_id)
-    {
-        $perPage = $request->query('per_page', 10);
-        $search = $request->query('search');
-
-        if (Auth::guard('admin')->check()) {
+public function index(Request $request, $course_id)
+{
+    $perPage = $request->query('per_page', 10);
+    $search = $request->query('search');
+  if (Auth::guard('admin')->check()) {
             // Admin guard হলে শুধু course_id দিয়ে ফিল্টার
             $query = CourseContent::where('course_id', $course_id);
-        } else {
-            // অন্য guard হলে শুধু নিজের assign করা content
-            $authUserId = Auth::id();
 
-            $query = CourseContent::whereIn('id', function ($sub) use ($authUserId) {
-                    $sub->select('course_content_id')
-                        ->from('course_content_user')
-                        ->where('user_id', $authUserId);
-                })
-                ->where('course_id', $course_id);
-        }
+  }else{
+    $authUserId = Auth::id();
 
-        if ($search) {
-            $query->where('name', 'like', "%{$search}%");
-        }
+    $query = CourseContent::whereIn('id', function ($sub) use ($authUserId) {
+            $sub->select('course_content_id')
+                ->from('course_content_user')
+                ->where('user_id', $authUserId);
+        })
+        ->where('course_id', $course_id);
 
-        $contents = $query->latest()->paginate($perPage);
 
-        return response()->json($contents);
+  }
+
+
+
+
+    if ($search) {
+        $query->where('name', 'like', "%{$search}%");
     }
+
+
+
+    $contents = $query->latest()->paginate($perPage);
+
+    return response()->json($contents);
+}
 
 
     // Store new content
