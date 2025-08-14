@@ -77,16 +77,25 @@ public function index(Request $request, $course_id)
 
     }
 
-
     public function getStudentsByContent(Request $request, $contentId)
     {
-        $perPage = $request->query('per_page', 10); // ডিফল্ট 10 টি
+        $perPage = $request->query('per_page', 10); // ডিফল্ট 10
+        $search = $request->query('search'); // search keyword
 
         $content = CourseContent::findOrFail($contentId);
 
-        $students = $content->students()
-            ->select('users.id', 'users.client_id', 'users.name', 'users.email', 'users.profile_picture')
-            ->paginate($perPage);
+        $studentsQuery = $content->students()
+            ->select('users.id', 'users.client_id', 'users.name', 'users.email', 'users.profile_picture');
+
+        // যদি search থাকে তাহলে filter করো
+        if (!empty($search)) {
+            $studentsQuery->where(function($query) use ($search) {
+                $query->where('users.name', 'like', "%{$search}%")
+                    ->orWhere('users.email', 'like', "%{$search}%");
+            });
+        }
+
+        $students = $studentsQuery->paginate($perPage);
 
         return response()->json([
             'content_id' => $content->id,
@@ -101,6 +110,7 @@ public function index(Request $request, $course_id)
             ]
         ]);
     }
+
 
 
 
