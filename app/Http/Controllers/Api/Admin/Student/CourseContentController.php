@@ -18,8 +18,13 @@ public function index(Request $request, $course_id)
     $perPage = $request->query('per_page', 10);
     $search = $request->query('search');
 
-    $query = Auth::user()
-        ->courseContents()
+    $authUserId = Auth::id();
+
+    $query = CourseContent::whereIn('id', function ($sub) use ($authUserId) {
+            $sub->select('course_content_id')
+                ->from('course_content_user')
+                ->where('user_id', $authUserId);
+        })
         ->where('course_id', $course_id);
 
     if ($search) {
@@ -30,7 +35,6 @@ public function index(Request $request, $course_id)
 
     return response()->json($contents);
 }
-
 
 
     // Store new content
