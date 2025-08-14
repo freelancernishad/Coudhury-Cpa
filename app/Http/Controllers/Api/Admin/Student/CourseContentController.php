@@ -11,17 +11,22 @@ use Illuminate\Support\Facades\Validator;
 class CourseContentController extends Controller
 {
     // Get all contents for a course
-    public function index(Request $request, $course_id)
-    {
-        // Get per_page from query, default to 10 if not provided
-        $perPage = $request->query('per_page', 10);
+public function index(Request $request, $course_id)
+{
+    $perPage = $request->query('per_page', 10);
+    $search = $request->query('search'); // search keyword
 
-        $contents = CourseContent::where('course_id', $course_id)
-            ->latest()
-            ->paginate($perPage);
+    $query = CourseContent::where('course_id', $course_id);
 
-        return response()->json($contents);
+    // যদি search থাকে তাহলে name filter করা হবে
+    if ($search) {
+        $query->where('name', 'like', "%{$search}%");
     }
+
+    $contents = $query->latest()->paginate($perPage);
+
+    return response()->json($contents);
+}
 
 
 
