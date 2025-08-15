@@ -23,7 +23,7 @@ return new class extends Migration
             $table->timestamp('otp_expires_at')->nullable();
             $table->unsignedBigInteger('client_id')->unique();
             $table->string('status')->default('active');
-            $table->string('role')->nullable();
+            $table->string('role')->default('student')->nullable();
             $table->string('nid_no')->nullable();
             $table->string('address_line1')->nullable();
             $table->string('address_line2')->nullable();

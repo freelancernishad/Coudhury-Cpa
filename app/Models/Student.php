@@ -133,22 +133,72 @@ public function coursePurchases()
         );
     }
 
-    public function getLastPaymentDateAttribute()
+      public function getLastPaymentDateAttribute()
     {
-        $lastPayment = $this->payments()->latest('paid_at')->first();
-        return $lastPayment ? $lastPayment->paid_at : null;
+      
+            $lastPayment = null;
+
+            foreach ($this->coursePurchases()->get() as $purchase) {
+                if ($purchase->last_payment) {
+                    if (!$lastPayment || $purchase->last_payment->paid_at > $lastPayment->paid_at) {
+                        $lastPayment = $purchase->last_payment;
+                    }
+                }
+            }
+
+            return $lastPayment ? $lastPayment->paid_at : null;
+        
+
+
     }
 
+
+    /**
+     * Get the last payment amount of the user.
+     *
+     * @return float|null
+     */
     public function getLastPaymentAmountAttribute()
     {
-        $lastPayment = $this->payments()->latest('paid_at')->first();
-        return $lastPayment ? $lastPayment->amount : null;
+        
+            // student হলে coursePurchases থেকে latest last_payment নাও
+            $lastPayment = null;
+
+            foreach ($this->coursePurchases()->get() as $purchase) {
+                if ($purchase->last_payment) {
+                    if (!$lastPayment || $purchase->last_payment->paid_at > $lastPayment->paid_at) {
+                        $lastPayment = $purchase->last_payment;
+                    }
+                }
+            }
+
+            return $lastPayment ? $lastPayment->amount : null;
+   
     }
+
+
+
+
+       /**
+     * Calculate the total due amount for the user.
+     */
+
 
     public function getTotalDueAttribute()
     {
-        return $this->servicePurchased()->sum('due_amount');
+        // যদি student role
+        if ($this->role === 'student') 
+            $totalDue = 0;
+
+            // coursePurchases relation load, paid না filter করলে সব আসবে
+            foreach ($this->coursePurchases()->get() as $purchase) {
+                $totalDue += $purchase->due_payment ?? 0; // <-- এখানে due_payment use করা হচ্ছে
+            }
+
+            return $totalDue;
+
     }
+
 
     public function servicePurchased()
     {
