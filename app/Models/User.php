@@ -199,10 +199,20 @@ public function coursePurchases()
        /**
      * Calculate the total due amount for the user.
      */
+
+
     public function getTotalDueAttribute()
     {
+        // যদি student role
+        if ($this->role === 'student') {
+            // coursePurchases থেকে due_amount যোগ
+            return $this->coursePurchases()->sum('due_amount');
+        }
+
+        // অন্য role হলে আগের logic
         return $this->servicePurchased()->sum('due_amount');
     }
+
 
     /**
      * Relationship with ServicePurchased model.
