@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\Admin\Users\UserController;
 use App\Http\Controllers\Api\Admin\Student\CourseController;
 use App\Http\Controllers\Api\Auth\Admin\AdminAuthController;
 use App\Http\Controllers\Api\Admin\Chat\AdminChatApiController;
+use App\Http\Controllers\Api\Admin\StudentV2\V2CourseController;
 use App\Http\Controllers\Api\Admin\Package\AdminPackageController;
 use App\Http\Controllers\Api\Admin\Student\AdminStudentController;
 use App\Http\Controllers\Api\Admin\Student\CourseContentController;
@@ -16,7 +17,10 @@ use App\Http\Controllers\Api\SystemSettings\SystemSettingController;
 use App\Http\Controllers\Api\Admin\Blogs\Articles\ArticlesController;
 use App\Http\Controllers\Api\Admin\Blogs\Category\CategoryController;
 use App\Http\Controllers\Api\Admin\Student\AdminCourseNoteController;
+use App\Http\Controllers\Api\Admin\StudentV2\V2AdminStudentController;
 use App\Http\Controllers\Api\Admin\Transitions\AdminPaymentController;
+use App\Http\Controllers\Api\Admin\StudentV2\V2CourseContentController;
+use App\Http\Controllers\Api\Admin\StudentV2\V2AdminCourseNoteController;
 use App\Http\Controllers\Api\Admin\Package\AdminPurchasedHistoryController;
 use App\Http\Controllers\Api\Admin\PackageAddon\AdminPackageAddonController;
 use App\Http\Controllers\Api\Admin\DashboardMetrics\AdminDashboardController;
@@ -215,36 +219,26 @@ Route::prefix('admin')->group(function () {
 
 
 
-    Route::prefix('/')->group(function () {
-        Route::get('/courses', [CourseController::class, 'index']); // list
-        Route::post('/courses', [CourseController::class, 'store']); // create
-        Route::put('/courses/{id}', [CourseController::class, 'update']); // update
-        Route::delete('/courses/{id}', [CourseController::class, 'destroy']); // delete
-        Route::put('/courses/{id}/update-price', [CourseController::class, 'updatePrice']); // price update
-    });
 
 
-    Route::prefix('/course-contents')->group(function () {
-        Route::get('{course_id}', [CourseContentController::class, 'index']);
-        Route::post('/', [CourseContentController::class, 'store']);
-        Route::get('show/{id}', [CourseContentController::class, 'show']);
-        Route::put('{id}', [CourseContentController::class, 'update']);
-        Route::post('{id}', [CourseContentController::class, 'update']);
-        Route::delete('{id}', [CourseContentController::class, 'destroy']);
-
-        Route::get('/{id}/students', [CourseContentController::class, 'getStudentsByContent']);
-
-
-        Route::post('/{id}/assign-students', [CourseContentController::class, 'assignStudents']);
-        Route::post('/{id}/remove-students', [CourseContentController::class, 'removeStudents']);
-
-
-
-    });
-
-
-
-
+        Route::prefix('/')->group(function () {
+            Route::get('/courses', [CourseController::class, 'index']); // list
+            Route::post('/courses', [CourseController::class, 'store']); // create
+            Route::put('/courses/{id}', [CourseController::class, 'update']); // update
+            Route::delete('/courses/{id}', [CourseController::class, 'destroy']); // delete
+            Route::put('/courses/{id}/update-price', [CourseController::class, 'updatePrice']); // price update
+        });
+        Route::prefix('/course-contents')->group(function () {
+            Route::get('{course_id}', [CourseContentController::class, 'index']);
+            Route::post('/', [CourseContentController::class, 'store']);
+            Route::get('show/{id}', [CourseContentController::class, 'show']);
+            Route::put('{id}', [CourseContentController::class, 'update']);
+            Route::post('{id}', [CourseContentController::class, 'update']);
+            Route::delete('{id}', [CourseContentController::class, 'destroy']);
+            Route::get('/{id}/students', [CourseContentController::class, 'getStudentsByContent']);
+            Route::post('/{id}/assign-students', [CourseContentController::class, 'assignStudents']);
+            Route::post('/{id}/remove-students', [CourseContentController::class, 'removeStudents']);
+        });
 
         Route::get('/students', [AdminStudentController::class, 'index']);
         Route::get('/student/{id}', [AdminStudentController::class, 'singleStudent']);
@@ -253,9 +247,6 @@ Route::prefix('admin')->group(function () {
         Route::get('/students/all/payments/{studentId}', [AdminStudentController::class, 'studentPayments']);
 
         Route::get('/students/{studentId}/purchases/{purchaseId}/payments', [AdminStudentController::class, 'purchasePayments']);
-
-
-
         // ✅ Admin Course Notes Routes
         Route::prefix('/course-notes')->group(function () {
             Route::get('{course_purchase_id}', [AdminCourseNoteController::class, 'index']);
@@ -265,10 +256,54 @@ Route::prefix('admin')->group(function () {
             Route::delete('{id}', [AdminCourseNoteController::class, 'destroy']);
         });
 
-
-
     });
 });
 
 
+
+
+
+        Route::prefix('v2/admin')->group(function () {
+
+            Route::middleware(AuthenticateAdmin::class)->group(function () { // Applying admin middleware
+
+                Route::prefix('/')->group(function () {
+                    Route::get('/courses', [V2CourseController::class, 'index']); // list
+                    Route::post('/courses', [V2CourseController::class, 'store']); // create
+                    Route::put('/courses/{id}', [V2CourseController::class, 'update']); // update
+                    Route::delete('/courses/{id}', [V2CourseController::class, 'destroy']); // delete
+                    Route::put('/courses/{id}/update-price', [V2CourseController::class, 'updatePrice']); // price update
+                });
+                Route::prefix('/course-contents')->group(function () {
+                    Route::get('{course_id}', [V2CourseContentController::class, 'index']);
+                    Route::post('/', [V2CourseContentController::class, 'store']);
+                    Route::get('show/{id}', [V2CourseContentController::class, 'show']);
+                    Route::put('{id}', [V2CourseContentController::class, 'update']);
+                    Route::post('{id}', [V2CourseContentController::class, 'update']);
+                    Route::delete('{id}', [V2CourseContentController::class, 'destroy']);
+                    Route::get('/{id}/students', [V2CourseContentController::class, 'getStudentsByContent']);
+                    Route::post('/{id}/assign-students', [V2CourseContentController::class, 'assignStudents']);
+                    Route::post('/{id}/remove-students', [V2CourseContentController::class, 'removeStudents']);
+                });
+
+                Route::get('/students', [V2AdminStudentController::class, 'index']);
+                Route::get('/student/{id}', [V2AdminStudentController::class, 'singleStudent']);
+                Route::get('/get/all/payments', [V2AdminStudentController::class, 'getPaymentsWithCourseDetails']);
+                Route::get('/students/{id}/purchases', [V2AdminStudentController::class, 'purchases']);
+                Route::get('/students/all/payments/{studentId}', [V2AdminStudentController::class, 'studentPayments']);
+
+                Route::get('/students/{studentId}/purchases/{purchaseId}/payments', [V2AdminStudentController::class, 'purchasePayments']);
+                // ✅ Admin Course Notes Routes
+                Route::prefix('/course-notes')->group(function () {
+                    Route::get('{course_purchase_id}', [V2AdminCourseNoteController::class, 'index']);
+                    Route::post('/', [V2AdminCourseNoteController::class, 'store']);
+                    Route::get('show/{id}', [V2AdminCourseNoteController::class, 'show']);
+                    Route::put('{id}', [V2AdminCourseNoteController::class, 'update']);
+                    Route::delete('{id}', [V2AdminCourseNoteController::class, 'destroy']);
+                });
+
+            });
+
+
+        });
 

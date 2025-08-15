@@ -66,11 +66,12 @@ return [
             'secret' => env('JWT_SECRET'), // Replace with your admin secret key
         ],
 
-        // 'student' => [
-        //     'driver' => 'jwt',
-        //     'provider' => 'students',
-        //     'secret' => env('STUDENT_JWT_SECRET'), // Replace with your admin secret key
-        // ],
+        'student' => [
+            'driver' => 'jwt',
+            'provider' => 'students',
+            'secret' => env('STUDENT_JWT_SECRET', env('JWT_SECRET')),
+            // আলাদা key না চাইলে JWT_SECRET ব্যবহার করবে
+        ],
     ],
 
 
@@ -106,10 +107,10 @@ return [
             'driver' => 'eloquent',
             'model' => App\Models\Admin::class,
         ],
-        // 'students' => [
-        //     'driver' => 'eloquent',
-        //     'model' => App\Models\Student::class,
-        // ],
+        'students' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Student::class, // Student model path
+        ],
     ],
 
     /*
@@ -143,6 +144,12 @@ return [
             'table' => 'password_reset_tokens', // Ensure this matches your table name
             'expire' => 60, // Link expires in 60 minutes
             'throttle' => 60, // Prevents multiple reset requests within 60 minutes
+        ],
+        'students' => [
+            'provider' => 'students',
+            'table' => 'password_reset_tokens',
+            'expire' => 60,
+            'throttle' => 60,
         ],
     ],
 

@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
 use App\Models\SystemSetting;
 use Illuminate\Database\QueryException;
+use Illuminate\Database\Eloquent\Relations\Relation;
+use App\Models\User;
+use App\Models\Student;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -32,6 +35,11 @@ class AppServiceProvider extends ServiceProvider
             // Log the error but continue running the application
             \Log::error('Error loading system settings: ' . $e->getMessage());
         }
+
+        Relation::morphMap([
+        'user' => User::class,
+        'student' => Student::class,
+    ]);
     }
 
     /**
