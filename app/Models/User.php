@@ -179,9 +179,25 @@ public function coursePurchases()
      */
     public function getLastPaymentDateAttribute()
     {
+        if ($this->role === 'student') {
+            $lastPayment = null;
+
+            foreach ($this->coursePurchases()->get() as $purchase) {
+                if ($purchase->last_payment) {
+                    if (!$lastPayment || $purchase->last_payment->paid_at > $lastPayment->paid_at) {
+                        $lastPayment = $purchase->last_payment;
+                    }
+                }
+            }
+
+            return $lastPayment ? $lastPayment->paid_at : null;
+        }
+
+        // অন্য role হলে আগের logic
         $lastPayment = $this->payments()->latest('paid_at')->first();
         return $lastPayment ? $lastPayment->paid_at : null;
     }
+
 
     /**
      * Get the last payment amount of the user.
@@ -190,9 +206,26 @@ public function coursePurchases()
      */
     public function getLastPaymentAmountAttribute()
     {
+        if ($this->role === 'student') {
+            // student হলে coursePurchases থেকে latest last_payment নাও
+            $lastPayment = null;
+
+            foreach ($this->coursePurchases()->get() as $purchase) {
+                if ($purchase->last_payment) {
+                    if (!$lastPayment || $purchase->last_payment->paid_at > $lastPayment->paid_at) {
+                        $lastPayment = $purchase->last_payment;
+                    }
+                }
+            }
+
+            return $lastPayment ? $lastPayment->amount : null;
+        }
+
+        // অন্য role হলে আগের logic
         $lastPayment = $this->payments()->latest('paid_at')->first();
         return $lastPayment ? $lastPayment->amount : null;
     }
+
 
 
 
