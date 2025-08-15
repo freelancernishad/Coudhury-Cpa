@@ -10,9 +10,9 @@ return new class extends Migration
     {
         Schema::table('course_purchases', function (Blueprint $table) {
             // foreign key drop করার জন্য dropConstrainedForeignId ব্যবহার
-            if (Schema::hasColumn('course_purchases', 'user_id')) {
-                $table->dropConstrainedForeignId('user_id');
-            }
+            // if (Schema::hasColumn('course_purchases', 'user_id')) {
+            //     $table->dropConstrainedForeignId('user_id');
+            // }
 
             // user_type ফিল্ড যোগ করা, default 'student'
             if (!Schema::hasColumn('course_purchases', 'user_type')) {
