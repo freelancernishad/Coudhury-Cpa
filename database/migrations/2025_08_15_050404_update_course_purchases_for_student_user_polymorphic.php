@@ -9,11 +9,18 @@ return new class extends Migration
     public function up()
     {
         Schema::table('course_purchases', function (Blueprint $table) {
-            // পুরানো foreign key drop
-            $table->dropForeign(['user_id']);
+            // foreign key drop করার আগে চেক
+            $sm = Schema::getConnection()->getDoctrineSchemaManager();
+            $doctrineTable = $sm->listTableDetails('course_purchases');
+
+            if ($doctrineTable->hasForeignKey('course_purchases_user_id_foreign')) {
+                $table->dropForeign('course_purchases_user_id_foreign');
+            }
 
             // user_type ফিল্ড যোগ করা, default 'student'
-            $table->string('user_type')->default('student')->after('user_id');
+            if (!Schema::hasColumn('course_purchases', 'user_type')) {
+                $table->string('user_type')->default('student')->after('user_id');
+            }
         });
     }
 
@@ -21,9 +28,11 @@ return new class extends Migration
     {
         Schema::table('course_purchases', function (Blueprint $table) {
             // user_type remove
-            $table->dropColumn('user_type');
+            if (Schema::hasColumn('course_purchases', 'user_type')) {
+                $table->dropColumn('user_type');
+            }
 
-            // পুরানো foreign key পুনরায় তৈরি
+            // foreign key পুনরায় তৈরি
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
