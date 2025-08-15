@@ -201,17 +201,24 @@ public function coursePurchases()
      */
 
 
-    public function getTotalDueAttribute()
-    {
-        // যদি student role
-        if ($this->role === 'student') {
-            // coursePurchases থেকে due_amount যোগ
-            return $this->coursePurchases()->sum('due_amount');
+public function getTotalDueAttribute()
+{
+    // যদি student role
+    if ($this->role === 'student') {
+        $totalDue = 0;
+
+        // coursePurchases relation থেকে iterate করে due_amount যোগ করা
+        foreach ($this->coursePurchases as $purchase) {
+            $totalDue += $purchase->due_amount ?? 0;
         }
 
-        // অন্য role হলে আগের logic
-        return $this->servicePurchased()->sum('due_amount');
+        return $totalDue;
     }
+
+    // অন্য role হলে আগের logic
+    return $this->servicePurchased()->sum('due_amount');
+}
+
 
 
     /**
