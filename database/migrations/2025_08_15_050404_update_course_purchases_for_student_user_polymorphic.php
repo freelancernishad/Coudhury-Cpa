@@ -9,9 +9,9 @@ return new class extends Migration
     public function up()
     {
         Schema::table('course_purchases', function (Blueprint $table) {
-            // foreign key drop করার চেষ্টা, যদি column থাকে
+            // foreign key drop করার জন্য dropConstrainedForeignId ব্যবহার
             if (Schema::hasColumn('course_purchases', 'user_id')) {
-                $table->dropForeign(['user_id']);
+                $table->dropConstrainedForeignId('user_id');
             }
 
             // user_type ফিল্ড যোগ করা, default 'student'
@@ -30,7 +30,7 @@ return new class extends Migration
             }
 
             // foreign key recreate
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
         });
     }
 };
