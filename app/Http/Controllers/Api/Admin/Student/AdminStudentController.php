@@ -32,12 +32,22 @@ public function index(Request $request)
         });
     }
 
+    // ✅ Filter by course_id if provided
+    if ($request->has('course_id')) {
+        $courseId = $request->input('course_id');
+
+        $students->whereHas('coursePurchases', function ($query) use ($courseId) {
+            $query->where('course_id', $courseId);
+        });
+    }
+
     $students = $students->orderByDesc('created_at')->paginate(20);
 
     return response()->json([
         'students' => $students
     ]);
 }
+
 
 
     /**

@@ -13,6 +13,8 @@ class V2AdminStudentController extends Controller
     /**
      * Show all students (student model handle করবে, তাই index optional)
      */
+
+    
     public function index(Request $request)
     {
         $students = Student::withCount('coursePurchases')
@@ -28,6 +30,16 @@ class V2AdminStudentController extends Controller
                     ->orWhere('email', 'like', "%{$search}%");
             });
         }
+        
+        // ✅ Filter by course_id if provided
+        if ($request->has('course_id')) {
+            $courseId = $request->input('course_id');
+
+            $students->whereHas('coursePurchases', function ($query) use ($courseId) {
+                $query->where('course_id', $courseId);
+            });
+        }
+
 
         $students = $students->orderByDesc('created_at')->paginate(20);
 
