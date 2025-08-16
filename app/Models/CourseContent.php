@@ -48,7 +48,7 @@ class CourseContent extends Model
     {
         return $this->hasMany(CourseContentFile::class)
                     ->whereNotNull('file_path')
-                    ->select(['id', 'course_content_id', 'file_path']);
+                    ->select(['id', 'course_content_id', 'file_path', 'file_name', 'file_type', 'file_size']);
     }
 
     public function links()
