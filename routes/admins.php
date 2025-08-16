@@ -235,6 +235,7 @@ Route::prefix('admin')->group(function () {
             Route::put('{id}', [CourseContentController::class, 'update']);
             Route::post('{id}', [CourseContentController::class, 'update']);
             Route::delete('{id}', [CourseContentController::class, 'destroy']);
+            Route::delete('delete/files/{id}', [CourseContentController::class, 'destroyContentFile']);
             Route::get('/{id}/students', [CourseContentController::class, 'getStudentsByContent']);
             Route::post('/{id}/assign-students', [CourseContentController::class, 'assignStudents']);
             Route::post('/{id}/remove-students', [CourseContentController::class, 'removeStudents']);
@@ -281,6 +282,7 @@ Route::prefix('admin')->group(function () {
                     Route::put('{id}', [V2CourseContentController::class, 'update']);
                     Route::post('{id}', [V2CourseContentController::class, 'update']);
                     Route::delete('{id}', [V2CourseContentController::class, 'destroy']);
+                    Route::delete('delete/files/{id}', [CourseContentController::class, 'destroyContentFile']);
                     Route::get('/{id}/students', [V2CourseContentController::class, 'getStudentsByContent']);
                     Route::post('/{id}/assign-students', [V2CourseContentController::class, 'assignStudents']);
                     Route::post('/{id}/remove-students', [V2CourseContentController::class, 'removeStudents']);

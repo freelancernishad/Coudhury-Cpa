@@ -44,6 +44,21 @@ class CourseContent extends Model
         return $this->belongsToMany(Student::class, 'course_content_student', 'course_content_id', 'student_id');
     }
 
+    public function files()
+    {
+        return $this->hasMany(CourseContentFile::class)
+                    ->whereNotNull('file_path')
+                    ->select(['id', 'course_content_id', 'file_path']);
+    }
+
+    public function links()
+    {
+        return $this->hasMany(CourseContentFile::class)
+                    ->whereNotNull('link')
+                    ->select(['id', 'course_content_id', 'link']);
+    }
+
+
       /**
      * Save file to S3 and update file_path column.
      *

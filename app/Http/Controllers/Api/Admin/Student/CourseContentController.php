@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Admin\Student;
 
 use Illuminate\Http\Request;
 use App\Models\CourseContent;
+use App\Models\CourseContentFile;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -20,12 +21,12 @@ public function index(Request $request, $course_id)
 
     if (Auth::guard('admin')->check()) {
         // Admin guard হলে শুধু course_id দিয়ে ফিল্টার
-        $query = CourseContent::where('course_id', $course_id);
+        $query = CourseContent::with('files', 'links')->where('course_id', $course_id);
     } else {
         // অন্য guard হলে শুধু নিজের assign করা content
         $authUserId = Auth::id();
 
-        $query = CourseContent::whereIn('id', function ($sub) use ($authUserId) {
+        $query = CourseContent::with('files', 'links')->whereIn('id', function ($sub) use ($authUserId) {
                 $sub->select('course_content_id')
                     ->from('course_content_user')
                     ->where('user_id', $authUserId);
@@ -43,51 +44,64 @@ public function index(Request $request, $course_id)
 }
 
     // Store new content
-    public function store(Request $request)
+   public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'course_id' => 'required|exists:courses,id',
             'name' => 'nullable|string|max:255',
             'description' => 'nullable|string',
-            'link' => 'nullable|url',
-            'file' => 'nullable|file|max:10240', // 10MB
+            'link' => 'nullable', // string or array allowed
+            'file' => 'nullable', // single or array of files
+            'file.*' => 'file|max:10240', // validate each file
             'students' => 'nullable|array',
-            'students.*' => 'exists:users,id' // প্রতিটি student আইডি valid কিনা
+            'students.*' => 'exists:users,id'
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $data = $request->only(['course_id', 'name', 'description', 'link']);
-
-
-
-
-
-
-
+        // Create course content
+        $data = $request->only(['course_id', 'name', 'description']);
         $content = CourseContent::create($data);
 
-
-        // যদি ফাইল থাকে তাহলে saveFile() ব্যবহার করো
-        if ($request->hasFile('file')) {
-            $content->saveFile($request->file('file')); // S3 upload + file_path update
+        // Handle links (can be string or array)
+        if ($request->filled('link')) {
+            $links = is_array($request->link) ? $request->link : [$request->link];
+            foreach ($links as $link) {
+                CourseContentFile::create([
+                    'course_content_id' => $content->id,
+                    'link' => $link,
+                ]);
+            }
         }
 
+        // Handle files (can be single or multiple)
+        if ($request->hasFile('file')) {
+            $files = is_array($request->file('file')) ? $request->file('file') : [$request->file('file')];
 
+            foreach ($files as $file) {
+                $contentFile = new \App\Models\CourseContentFile();
+                $contentFile->course_content_id = $content->id;
+                $contentFile->saveFile($file);
+            }
+        }
 
-        // যদি students array থাকে তাহলে attach করো
+        // Attach students
         if (!empty($request->students)) {
             $content->students()->attach($request->students);
         }
 
         return response()->json([
             'message' => 'Course content created successfully',
-            'content' => $content->load('students') // students relationship সহ রিটার্ন করব
+            'content' => $content->load('students', 'files','links')
         ], 201);
-
     }
+
+
+
+
+
 
     public function getStudentsByContent(Request $request, $contentId)
     {
@@ -176,15 +190,22 @@ public function index(Request $request, $course_id)
 
 
     // Update content
-   public function update(Request $request, $id)
+  public function update(Request $request, $id)
     {
         $content = CourseContent::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
             'name' => 'nullable|string|max:255',
             'description' => 'nullable|string',
-            'link' => 'nullable|url',
-            'file' => 'nullable|file|max:10240', // 10MB
+
+            // single বা multiple links
+            'link' => 'nullable',
+            'link.*' => 'nullable|url',
+
+            // single বা multiple files
+            'file' => 'nullable',
+            'file.*' => 'file|max:10240',
+
             'students' => 'nullable|array',
             'students.*' => 'exists:users,id'
         ]);
@@ -193,48 +214,90 @@ public function index(Request $request, $course_id)
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // Update basic fields if present
-        $content->fill($request->only(['name', 'description', 'link']));
-
-        // Handle file upload
-        if ($request->hasFile('file')) {
-            if ($content->file_path && Storage::exists($content->file_path)) {
-                Storage::delete($content->file_path);
-            }
-            $content->saveFile($request->file('file')); // Assuming saveFile() handles S3 upload and updates file_path
-        }
-
+        // Update basic fields
+        $content->fill($request->only(['name', 'description']));
         $content->save();
 
-        // Sync students if provided
+        // Handle links (single or multiple)
+        if ($request->has('link')) {
+            $links = $request->input('link');
+            $linkArray = is_array($links) ? $links : [$links];
+
+            foreach ($linkArray as $link) {
+                if ($link) {
+                    $content->files()->create(['link' => $link]);
+                }
+            }
+        }
+
+        // Handle file uploads using saveFile()
+        if ($request->hasFile('file')) {
+            $files = $request->file('file');
+            $fileArray = is_array($files) ? $files : [$files];
+
+            foreach ($fileArray as $file) {
+                $content->saveFile($file); // saveFile() handles storage + updates file_path
+            }
+        }
+
+        // Sync students
         if ($request->has('students')) {
             $content->students()->sync($request->students);
         }
 
         return response()->json([
             'message' => 'Course content updated successfully',
-            'content' => $content->load('students')
+            'content' => $content->load(['students', 'files'])
         ]);
     }
 
     // Delete content
-    public function destroy($id)
-    {
-        $content = CourseContent::findOrFail($id);
+public function destroy($id)
+{
+    $content = CourseContent::with(['files', 'links'])->findOrFail($id);
 
-        if ($content->file_path && Storage::exists($content->file_path)) {
-            Storage::delete($content->file_path);
+    // ✅ Delete files from storage
+    foreach ($content->files as $file) {
+        if ($file->file_path && Storage::disk('public')->exists($file->file_path)) {
+            Storage::disk('public')->delete($file->file_path);
         }
 
-        $content->delete();
-
-        return response()->json(['message' => 'Course content deleted successfully']);
+        $file->delete(); // Delete file record from DB
     }
 
+    // ✅ Delete links from DB
+    foreach ($content->links as $link) {
+        $link->delete();
+    }
+
+    // ✅ Finally delete the course content
+    $content->delete();
+
+    return response()->json([
+        'message' => 'Course content and its associated files & links deleted successfully.'
+    ]);
+}
+
+    public function destroyContentFile($id)
+    {
+        $file = CourseContentFile::findOrFail($id);
+
+        // যদি এটা একটি ফাইল হয় (not just a link)
+        // if ($file->file_path && Storage::disk('public')->exists($file->file_path)) {
+        //     Storage::disk('public')->delete($file->file_path);
+        // }
+
+        // ডাটাবেস থেকে রেকর্ড ডিলিট
+        $file->delete();
+
+        return response()->json([
+            'message' => 'Content file/link deleted successfully.'
+        ]);
+    }
     // Show single content
     public function show($id)
     {
-        $content = CourseContent::findOrFail($id);
+        $content = CourseContent::with('files', 'links')->findOrFail($id);
         return response()->json($content);
     }
 }
