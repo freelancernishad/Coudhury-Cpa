@@ -103,61 +103,39 @@ public function index(Request $request, $course_id)
 
 
 
-public function getStudentsByContent(Request $request, $contentId)
-{
-    $perPage = $request->query('per_page', 10); // ডিফল্ট 10
-    $search = $request->query('search'); // search keyword
+    public function getStudentsByContent(Request $request, $contentId)
+    {
+        $perPage = $request->query('per_page', 10); // ডিফল্ট 10
+        $search = $request->query('search'); // search keyword
 
-    $content = CourseContent::findOrFail($contentId);
+        $content = CourseContent::findOrFail($contentId);
 
-    // Eager load coursePurchases -> course
-    $studentsQuery = $content->students()
-        ->with(['coursePurchases.course'])
-        ->select('users.id', 'users.client_id', 'users.name', 'users.email', 'users.profile_picture');
+        $studentsQuery = $content->students()
+            ->select('users.id', 'users.client_id', 'users.name', 'users.email', 'users.profile_picture');
 
-    // যদি search থাকে তাহলে filter করো
-    if (!empty($search)) {
-        $studentsQuery->where(function($query) use ($search) {
-            $query->where('users.name', 'like', "%{$search}%")
-                  ->orWhere('users.email', 'like', "%{$search}%");
-        });
+        // যদি search থাকে তাহলে filter করো
+        if (!empty($search)) {
+            $studentsQuery->where(function($query) use ($search) {
+                $query->where('users.name', 'like', "%{$search}%")
+                    ->orWhere('users.email', 'like', "%{$search}%");
+            });
+        }
+
+        $students = $studentsQuery->paginate($perPage);
+
+        return response()->json([
+            'content_id' => $content->id,
+            'content_name' => $content->name,
+            'total_students' => $students->total(),
+            'students' => $students->items(),
+            'pagination' => [
+                'current_page' => $students->currentPage(),
+                'per_page' => $students->perPage(),
+                'last_page' => $students->lastPage(),
+                'total' => $students->total(),
+            ]
+        ]);
     }
-
-    $students = $studentsQuery->paginate($perPage);
-
-    // Transform to include purchased courses with enrolled_at
-    $studentsData = $students->map(function ($student) {
-        return [
-            'id' => $student->id,
-            'client_id' => $student->client_id,
-            'name' => $student->name,
-            'email' => $student->email,
-            'profile_picture' => $student->profile_picture,
-            'purchased_courses' => $student->coursePurchases->map(function ($purchase) {
-                return [
-                    'course_id' => $purchase->course->id ?? null,
-                    'course_title' => $purchase->course->title ?? null,
-                    'amount_paid' => $purchase->amount,
-                    'status' => $purchase->status,
-                    'enrolled_at' => $purchase->created_at, // added here
-                ];
-            }),
-        ];
-    });
-
-    return response()->json([
-        'content_id' => $content->id,
-        'content_name' => $content->name,
-        'total_students' => $students->total(),
-        'students' => $studentsData,
-        'pagination' => [
-            'current_page' => $students->currentPage(),
-            'per_page' => $students->perPage(),
-            'last_page' => $students->lastPage(),
-            'total' => $students->total(),
-        ]
-    ]);
-}
 
 
 
