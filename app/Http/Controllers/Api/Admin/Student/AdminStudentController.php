@@ -74,45 +74,53 @@ public function index(Request $request)
     }
 
 
-   public function getPaymentsWithCourseDetails(Request $request)
+public function getPaymentsWithCourseDetails(Request $request)
 {
     $perPage = $request->input('per_page', 10);
-    $search = $request->input('search'); // Optional filter
+    $search = $request->input('search');
 
-    $paymentsQuery = CoursePurchasePayment::with('coursePurchase.course', 'coursePurchase.user')->where('status', 'paid');
+    // Eager load course and direct User relation (asUser)
+    $paymentsQuery = CoursePurchasePayment::with([
+        'coursePurchase.course',
+        'coursePurchase.asUser',  // direct User
+    ])->where('status', 'paid');
 
-    // Filter by user email if provided
+    // Search filter using direct user relation
     if ($search) {
-        $paymentsQuery->whereHas('coursePurchase.user', function ($query) use ($search) {
+        $paymentsQuery->whereHas('coursePurchase.asUser', function ($query) use ($search) {
             $query->where('email', 'like', "%{$search}%");
         });
     }
 
     $payments = $paymentsQuery->paginate($perPage);
 
-    // Transform each item in the collection
+    // Transform after pagination
     $payments->getCollection()->transform(function ($payment) {
+        $coursePurchase = $payment->coursePurchase;
+
         return [
             'payment_id' => $payment->id,
-            'email' => $payment->coursePurchase->user->email ?? null,
+            'email' => $payment->coursePurchase->asUser->email ?? null,
             'stripe_payment_id' => $payment->stripe_payment_id,
             'amount' => $payment->amount,
             'status' => $payment->status,
             'paid_at' => $payment->paid_at,
             'course_purchase_id' => $payment->course_purchase_id,
-            'user_email' => $payment->coursePurchase->user->email ?? null,
+            'user_email' => $coursePurchase->asUser->email ?? null, // use asUser
             'course' => [
-                'id' => $payment->coursePurchase->course->id ?? null,
-                'title' => $payment->coursePurchase->course->title ?? 'N/A',
-                'price' => $payment->coursePurchase->course->price ?? 0,
-                'recurring_price' => $payment->coursePurchase->course->recurring_price ?? 0,
-                'recurring_month' => $payment->coursePurchase->course->recurring_month ?? 0,
+                'id' => $coursePurchase->course->id ?? null,
+                'title' => $coursePurchase->course->title ?? 'N/A',
+                'price' => $coursePurchase->course->price ?? 0,
+                'recurring_price' => $coursePurchase->course->recurring_price ?? 0,
+                'recurring_month' => $coursePurchase->course->recurring_month ?? 0,
             ],
         ];
     });
 
     return response()->json($payments);
 }
+
+
 
 
 

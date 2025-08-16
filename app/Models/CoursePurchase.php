@@ -41,7 +41,19 @@ class CoursePurchase extends Model
     {
         return $this->morphTo(__FUNCTION__, 'user_type', 'user_id');
     }
- 
+
+
+    // Direct relation with User model (for when you are sure it's a User)
+    public function asUser()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    // Direct relation with Student model (for when you are sure it's a Student)
+    public function asStudent()
+    {
+        return $this->belongsTo(Student::class, 'user_id');
+    }
 
     public function course()
     {
