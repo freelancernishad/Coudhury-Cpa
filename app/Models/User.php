@@ -152,14 +152,13 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
 
      public function getMorphClass()
     {
-        return 'user'; 
+        return 'user';
     }
 
-public function coursePurchases()
-{
-    return $this->morphMany(CoursePurchase::class, 'user', 'user_type', 'user_id')
-                ->where('status', 'paid');
-}
+    public function coursePurchases()
+    {
+        return $this->hasMany(CoursePurchase::class, 'user_id');
+    }
 
 
 

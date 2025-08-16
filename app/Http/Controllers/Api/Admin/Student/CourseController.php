@@ -9,12 +9,15 @@ use Illuminate\Support\Facades\Validator;
 
 class CourseController extends Controller
 {
+
+    
     // 🔹 List all courses (paginated)
     public function index(Request $request)
     {
         $courses = Course::paginate($request->per_page ?? 10);
         return response()->json($courses);
     }
+
 
     // 🔹 Create a new course
     public function store(Request $request)
