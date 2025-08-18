@@ -236,7 +236,11 @@ public function index(Request $request, $course_id)
             $fileArray = is_array($files) ? $files : [$files];
 
             foreach ($fileArray as $file) {
-                $content->saveFile($file); // saveFile() handles storage + updates file_path
+
+                $contentFile = new \App\Models\CourseContentFile();
+                $contentFile->course_content_id = $content->id;
+                $contentFile->saveFile($file);
+
             }
         }
 
