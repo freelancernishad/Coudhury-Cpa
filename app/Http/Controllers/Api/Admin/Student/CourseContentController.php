@@ -190,70 +190,79 @@ public function index(Request $request, $course_id)
 
 
     // Update content
-  public function update(Request $request, $id)
-    {
-        $content = CourseContent::findOrFail($id);
+public function update(Request $request, $id)
+{
+    $content = CourseContent::findOrFail($id);
 
-        $validator = Validator::make($request->all(), [
-            'name' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
+    $validator = Validator::make($request->all(), [
+        'name' => 'nullable|string|max:255',
+        'description' => 'nullable|string',
 
-            // single বা multiple links
-            'link' => 'nullable',
-            'link.*' => 'nullable|url',
+        // link can be string or array
+        'link' => 'nullable',
+        'link.*' => 'nullable|url',
 
-            // single বা multiple files
-            'file' => 'nullable',
-            'file.*' => 'file|max:10240',
+        // file can be single or array
+        'file' => 'nullable',
+        'file.*' => 'file|max:10240',
 
-            'students' => 'nullable|array',
-            'students.*' => 'exists:users,id'
-        ]);
+        'students' => 'nullable|array',
+        'students.*' => 'exists:users,id',
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        // Update basic fields
-        $content->fill($request->only(['name', 'description']));
-        $content->save();
-
-        // Handle links (single or multiple)
-        if ($request->has('link')) {
-            $links = $request->input('link');
-            $linkArray = is_array($links) ? $links : [$links];
-
-            foreach ($linkArray as $link) {
-                if ($link) {
-                    $content->files()->create(['link' => $link]);
-                }
-            }
-        }
-
-        // Handle file uploads using saveFile()
-        if ($request->hasFile('file')) {
-            $files = $request->file('file');
-            $fileArray = is_array($files) ? $files : [$files];
-
-            foreach ($fileArray as $file) {
-
-                $contentFile = new \App\Models\CourseContentFile();
-                $contentFile->course_content_id = $content->id;
-                $contentFile->saveFile($file);
-
-            }
-        }
-
-        // Sync students
-        if ($request->has('students')) {
-            $content->students()->sync($request->students);
-        }
-
-        return response()->json([
-            'message' => 'Course content updated successfully',
-            'content' => $content->load(['students', 'files'])
-        ]);
+    if ($validator->fails()) {
+        return response()->json(['errors' => $validator->errors()], 422);
     }
+
+    // Update basic fields
+    $content->fill($request->only(['name', 'description']));
+    $content->save();
+
+    // ✅ Delete old files and links
+    foreach ($content->courseContentFiles as $file) {
+        if ($file->file_path && Storage::exists($file->file_path)) {
+            Storage::delete($file->file_path);
+        }
+        $file->delete();
+    }
+
+    // ✅ Add new links
+    if ($request->has('link')) {
+        $links = $request->input('link');
+        $links = is_array($links) ? $links : [$links];
+
+        foreach ($links as $link) {
+            if ($link) {
+                CourseContentFile::create([
+                    'course_content_id' => $content->id,
+                    'link' => $link,
+                ]);
+            }
+        }
+    }
+
+    // ✅ Add new files
+    if ($request->hasFile('file')) {
+        $files = $request->file('file');
+        $files = is_array($files) ? $files : [$files];
+
+        foreach ($files as $file) {
+            $contentFile = new \App\Models\CourseContentFile();
+            $contentFile->course_content_id = $content->id;
+            $contentFile->saveFile($file);
+        }
+    }
+
+    // ✅ Sync students
+    if ($request->has('students')) {
+        $content->students()->sync($request->students);
+    }
+
+    return response()->json([
+        'message' => 'Course content updated successfully',
+        'content' => $content->load(['students', 'files', 'links']),
+    ]);
+}
 
     // Delete content
 public function destroy($id)

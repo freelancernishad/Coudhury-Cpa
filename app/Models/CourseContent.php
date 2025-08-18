@@ -57,7 +57,10 @@ class CourseContent extends Model
                     ->whereNotNull('link')
                     ->select(['id', 'course_content_id', 'link']);
     }
-
+    public function courseContentFiles()
+    {
+        return $this->hasMany(CourseContentFile::class);
+    }
 
       /**
      * Save file to S3 and update file_path column.
