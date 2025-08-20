@@ -175,6 +175,7 @@ class AdminDashboardController extends Controller
 
              // Get the latest 10 registered users with selected fields
         $latestUsers = User::select('name', 'profile_picture', 'client_id', 'status')
+        ->where('role', 'client') // Assuming you want to filter by client role
         ->latest()
         ->take(10)
         ->get();
