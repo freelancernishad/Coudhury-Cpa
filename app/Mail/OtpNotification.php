@@ -10,10 +10,12 @@ class OtpNotification  extends Mailable
     use Queueable, SerializesModels;
 
     protected $otp;
+    protected $user;
 
-    public function __construct($otp)
+    public function __construct($otp, $user = null)
     {
         $this->otp = $otp;
+        $this->user = $user;
     }
 
 
@@ -26,6 +28,8 @@ class OtpNotification  extends Mailable
                     ->view('emails.otp')
                     ->with([
                         'otp' => $this->otp,
+                        'user' => $this->user,
+                        'name' => $this->user ? $this->user->name : 'User',
                     ]);
     }
 

@@ -205,7 +205,7 @@ class VerificationController extends Controller
         $user->save();
 
         // Send the new OTP via email
-        Mail::to($user->email)->send(new OtpNotification($otp));
+        Mail::to($user->email)->send(new OtpNotification($otp, $user));
 
         return response()->json(['message' => 'A new OTP has been sent to your email.'], 200);
     }

@@ -72,7 +72,7 @@ class AuthUserController extends Controller
         $user->otp_expires_at = now()->addMinutes(5);
         $user->save();
 
-        Mail::to($user->email)->send(new OtpNotification($otp));
+        Mail::to($user->email)->send(new OtpNotification($otp,$user));
     }
 
     // Define payload data
@@ -147,7 +147,7 @@ class AuthUserController extends Controller
                     $user->save();
 
                     try {
-                        Mail::to($user->email)->send(new OtpNotification($otp));
+                        Mail::to($user->email)->send(new OtpNotification($otp, $user));
                     } catch (\Exception $e) {
                         \Log::error('Failed to send OTP: ' . $e->getMessage());
 

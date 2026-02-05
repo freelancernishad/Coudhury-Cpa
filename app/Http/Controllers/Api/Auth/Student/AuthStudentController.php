@@ -59,7 +59,7 @@ class AuthStudentController extends Controller
             $student->otp_expires_at = now()->addMinutes(5);
             $student->save();
 
-            Mail::to($student->email)->send(new OtpNotification($otp));
+            Mail::to($student->email)->send(new OtpNotification($otp, $student));
         }
 
         return response()->json([
@@ -108,7 +108,7 @@ class AuthStudentController extends Controller
                     $student->save();
 
                     try {
-                        Mail::to($student->email)->send(new OtpNotification($otp));
+                        Mail::to($student->email)->send(new OtpNotification($otp, $student));
                     } catch (\Exception $e) {
                         \Log::error('Failed to send OTP: ' . $e->getMessage());
                     }
