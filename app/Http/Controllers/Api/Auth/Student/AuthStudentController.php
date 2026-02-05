@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use App\Mail\OtpNotification;
 use App\Models\TokenBlacklist;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -99,7 +100,7 @@ class AuthStudentController extends Controller
                     try {
                         Mail::to($student->email)->send(new VerifyEmail($student, $verify_url));
                     } catch (\Exception $e) {
-                        \Log::error('Failed to send verification email: ' . $e->getMessage());
+                        Log::error('Failed to send verification email: ' . $e->getMessage());
                     }
                 } else {
                     $otp = random_int(100000, 999999);
@@ -110,7 +111,7 @@ class AuthStudentController extends Controller
                     try {
                         Mail::to($student->email)->send(new OtpNotification($otp, $student));
                     } catch (\Exception $e) {
-                        \Log::error('Failed to send OTP: ' . $e->getMessage());
+                        Log::error('Failed to send OTP: ' . $e->getMessage());
                     }
                 }
             }

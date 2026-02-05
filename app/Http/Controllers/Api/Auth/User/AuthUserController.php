@@ -12,8 +12,9 @@ use App\Models\TokenBlacklist;
 
 
 use Tymon\JWTAuth\Facades\JWTAuth;
-use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Log;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -137,7 +138,7 @@ class AuthUserController extends Controller
                     try {
                         Mail::to($user->email)->send(new VerifyEmail($user, $verify_url));
                     } catch (\Exception $e) {
-                        \Log::error('Failed to send verification email: ' . $e->getMessage());
+                        Log::error('Failed to send verification email: ' . $e->getMessage());
 
                     }
                 } else {
@@ -149,7 +150,7 @@ class AuthUserController extends Controller
                     try {
                         Mail::to($user->email)->send(new OtpNotification($otp, $user));
                     } catch (\Exception $e) {
-                        \Log::error('Failed to send OTP: ' . $e->getMessage());
+                        Log::error('Failed to send OTP: ' . $e->getMessage());
 
                     }
                 }
