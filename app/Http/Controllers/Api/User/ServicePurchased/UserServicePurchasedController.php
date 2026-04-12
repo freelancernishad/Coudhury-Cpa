@@ -25,10 +25,18 @@ class UserServicePurchasedController extends Controller
      */
     public function createStripeCheckoutSession(Request $request): JsonResponse
     {
+        // Sanitize inputs that might be sent as string "null" from FormData
+        $input = $request->all();
+        foreach (['coupon_id', 'success_url', 'cancel_url'] as $key) {
+            if (isset($input[$key]) && ($input[$key] === 'null' || $input[$key] === '')) {
+                $input[$key] = null;
+            }
+        }
+
         // Validate the request
-        $validator = Validator::make($request->all(), [
+        $validator = Validator::make($input, [
             'coupon_id' => 'nullable|exists:coupons,id',
-            'service_details' => 'required', // Ensure service_details is a valid JSON string
+            'service_details' => 'required', // Ensure service_details is a valid JSON string or array
             'files' => 'nullable|array',
             'files.*' => 'file|mimes:jpeg,png,pdf,doc,docx',
             'success_url' => 'nullable|string',
@@ -45,39 +53,19 @@ class UserServicePurchasedController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        // Decode the service_details JSON string into an array
-        // $serviceDetails = json_decode($request->input('service_details'), true);
-
-
-        $serviceDetails = $request->input('service_details');
-
-        // Option 1: If service_details is a JSON string, decode it
+        // Decode the service_details JSON string into an array if it's a string
+        $serviceDetails = $input['service_details'];
         if (is_string($serviceDetails)) {
-            $serviceDetails = json_decode($serviceDetails, true);
-
-            // Check if JSON decoding was successful
+            $decoded = json_decode($serviceDetails, true);
             if (json_last_error() === JSON_ERROR_NONE) {
-                 $serviceDetails = $serviceDetails;
+                $serviceDetails = $decoded;
             } else {
-
-                $serviceDetails = []; // Return an empty array if decoding fails
+                return response()->json(['error' => 'Invalid service_details JSON'], 400);
             }
         }
 
-        // Option 2: If service_details is already an array, use it directly
-        if (is_array($serviceDetails)) {
-             $serviceDetails =$serviceDetails;
-        }
-
-
-
-
-
-
-
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            return response()->json(['error' => 'Invalid service_details JSON'], 400);
+        if (!is_array($serviceDetails)) {
+            return response()->json(['error' => 'service_details must be an array or valid JSON string'], 400);
         }
 
         // Extract amount from service_details
@@ -92,11 +80,11 @@ class UserServicePurchasedController extends Controller
         $currency = 'USD';
 
         // Coupon ID (if provided)
-        $couponId = $request->input('coupon_id');
+        $couponId = $input['coupon_id'];
 
         // Success and cancel URLs
-        $baseSuccessUrl = $request->input('success_url', 'http://localhost:8000/stripe/payment/success');
-        $baseCancelUrl = $request->input('cancel_url', 'http://localhost:8000/stripe/payment/cancel');
+        $baseSuccessUrl = $input['success_url'] ?? 'http://localhost:8000/stripe/payment/success';
+        $baseCancelUrl = $input['cancel_url'] ?? 'http://localhost:8000/stripe/payment/cancel';
 
         $discount = 0;
         $finalAmount = $amount; // Start with the base amount
