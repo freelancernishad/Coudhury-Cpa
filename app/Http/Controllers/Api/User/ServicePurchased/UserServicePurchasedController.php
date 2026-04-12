@@ -90,7 +90,7 @@ class UserServicePurchasedController extends Controller
         $finalAmount = $amount; // Start with the base amount
 
         // Handle coupon discount
-        if ($couponId) {
+        if ($couponId != null) {
             $coupon = Coupon::find($couponId);
             if ($coupon && $coupon->isValid()) {
                 $discount = $coupon->getDiscountAmount($amount);
@@ -124,7 +124,7 @@ class UserServicePurchasedController extends Controller
             foreach ($files as $file) {
 
                 // Use the ServicePurchasedFile model's upload method
-                ServicePurchasedFile::ServicePurchasedFileUpload($file, $servicePurchased->id,$userId);
+                ServicePurchasedFile::ServicePurchasedFileUpload($file, $servicePurchased->id, $userId);
             }
         }
 
