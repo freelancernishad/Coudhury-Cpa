@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\Admin\SupportTicket\AdminSupportTicketApiController
 use App\Http\Controllers\Api\Admin\ServicePurchased\ServicePurchasedFileController;
 use App\Http\Controllers\Api\Admin\Resources\AdminResourcesController;
 use App\Http\Controllers\Api\Admin\Resources\FinancialCalculatorController;
+use App\Http\Controllers\Api\Admin\Resources\FinancialCalculatorCategoryController;
 
 Route::prefix('auth/admin')->group(function () {
     Route::post('login', [AdminAuthController::class, 'login'])->name('admin.login');
@@ -273,6 +274,14 @@ Route::prefix('admin')->group(function () {
             Route::put('/{id}', [FinancialCalculatorController::class, 'update']);
             Route::delete('/{id}', [FinancialCalculatorController::class, 'destroy']);
             Route::post('/calculate', [FinancialCalculatorController::class, 'calculate']);
+
+            Route::prefix('categories')->group(function () {
+                Route::get('/', [FinancialCalculatorCategoryController::class, 'index']);
+                Route::post('/', [FinancialCalculatorCategoryController::class, 'store']);
+                Route::get('/{id}', [FinancialCalculatorCategoryController::class, 'show']);
+                Route::put('/{id}', [FinancialCalculatorCategoryController::class, 'update']);
+                Route::delete('/{id}', [FinancialCalculatorCategoryController::class, 'destroy']);
+            });
         });
 
     });

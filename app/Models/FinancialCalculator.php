@@ -11,6 +11,7 @@ class FinancialCalculator extends Model
 
     protected $fillable = [
         'name',
+        'category_id',
         'slug',
         'description',
         'icon',
@@ -25,4 +26,9 @@ class FinancialCalculator extends Model
         'results' => 'array',
         'is_active' => 'boolean',
     ];
+
+    public function category()
+    {
+        return $this->belongsTo(FinancialCalculatorCategory::class, 'category_id');
+    }
 }

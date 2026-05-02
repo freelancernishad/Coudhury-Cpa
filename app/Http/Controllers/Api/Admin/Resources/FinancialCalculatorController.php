@@ -15,7 +15,7 @@ class FinancialCalculatorController extends Controller
      */
     public function index()
     {
-        $calculators = FinancialCalculator::where('is_active', true)->get();
+        $calculators = FinancialCalculator::with('category')->where('is_active', true)->get();
         return response()->json($calculators);
     }
 
@@ -26,6 +26,7 @@ class FinancialCalculatorController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
+            'category_id' => 'nullable|exists:financial_calculator_categories,id',
             'description' => 'nullable|string',
             'icon' => 'nullable|string',
             'inputs' => 'required|array',
@@ -61,6 +62,7 @@ class FinancialCalculatorController extends Controller
         
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|required|string|max:255',
+            'category_id' => 'nullable|exists:financial_calculator_categories,id',
             'inputs' => 'sometimes|required|array',
             'formula' => 'nullable|string',
             'results' => 'sometimes|required|array|min:1',
@@ -95,6 +97,19 @@ class FinancialCalculatorController extends Controller
         $calculator = FinancialCalculator::findOrFail($id);
         $calculator->delete();
         return response()->json(['message' => 'Calculator deleted successfully']);
+    }
+
+    /**
+     * Public: Get calculator details by ID or Slug
+     */
+    public function show($id)
+    {
+        $calculator = FinancialCalculator::with('category')
+            ->where('id', $id)
+            ->orWhere('slug', $id)
+            ->firstOrFail();
+            
+        return response()->json($calculator);
     }
 
     /**

@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\Admin\Services\AdminServicesController;
 use App\Http\Controllers\Api\User\UserManagement\UserProfileController;
 use App\Http\Controllers\Api\User\PackageAddon\UserPackageAddonController;
 use App\Http\Controllers\Api\User\ServicePurchased\ServicePurchasedDuePaymentController;
+use App\Http\Controllers\Api\Admin\Resources\FinancialCalculatorController;
+use App\Http\Controllers\Api\Admin\Resources\FinancialCalculatorCategoryController;
 
 // Load users and admins route files
 if (file_exists($userRoutes = __DIR__.'/example.php')) {
@@ -62,9 +64,10 @@ Route::prefix('global/')->group(function () {
     // Route to create a payment for a specific ServicePurchased record
     Route::post('/service-purchased/create-payment', [ServicePurchasedDuePaymentController::class, 'createPayment']);
 
-
-
-
+    // Public Financial Calculator Routes
+    Route::get('/financial-calculators', [FinancialCalculatorCategoryController::class, 'publicIndex']);
+    Route::get('/financial-calculator/{id}', [FinancialCalculatorController::class, 'show']);
+    Route::post('/financial-calculator/calculate', [FinancialCalculatorController::class, 'calculate']);
 });
 
 
