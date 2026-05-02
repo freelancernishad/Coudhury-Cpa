@@ -28,6 +28,7 @@ use App\Http\Controllers\Api\Admin\SocialMedia\AdminSocialMediaLinkController;
 use App\Http\Controllers\Api\Admin\ServicePurchased\ServicePurchasedController;
 use App\Http\Controllers\Api\Admin\SupportTicket\AdminSupportTicketApiController;
 use App\Http\Controllers\Api\Admin\ServicePurchased\ServicePurchasedFileController;
+use App\Http\Controllers\Api\Admin\Resources\AdminResourcesController;
 
 Route::prefix('auth/admin')->group(function () {
     Route::post('login', [AdminAuthController::class, 'login'])->name('admin.login');
@@ -255,6 +256,14 @@ Route::prefix('admin')->group(function () {
             Route::get('show/{id}', [AdminCourseNoteController::class, 'show']);
             Route::put('{id}', [AdminCourseNoteController::class, 'update']);
             Route::delete('{id}', [AdminCourseNoteController::class, 'destroy']);
+        });
+
+        Route::prefix('resources')->group(function () {
+            Route::get('/', [AdminResourcesController::class, 'index']);
+            Route::post('/', [AdminResourcesController::class, 'store']);
+            Route::get('/{id}', [AdminResourcesController::class, 'show']);
+            Route::put('/{id}', [AdminResourcesController::class, 'update']);
+            Route::delete('/{id}', [AdminResourcesController::class, 'destroy']);
         });
 
     });
