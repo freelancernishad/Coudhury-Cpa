@@ -29,6 +29,7 @@ use App\Http\Controllers\Api\Admin\ServicePurchased\ServicePurchasedController;
 use App\Http\Controllers\Api\Admin\SupportTicket\AdminSupportTicketApiController;
 use App\Http\Controllers\Api\Admin\ServicePurchased\ServicePurchasedFileController;
 use App\Http\Controllers\Api\Admin\Resources\AdminResourcesController;
+use App\Http\Controllers\Api\Admin\Resources\FinancialCalculatorController;
 
 Route::prefix('auth/admin')->group(function () {
     Route::post('login', [AdminAuthController::class, 'login'])->name('admin.login');
@@ -264,6 +265,14 @@ Route::prefix('admin')->group(function () {
             Route::get('/{id}', [AdminResourcesController::class, 'show']);
             Route::put('/{id}', [AdminResourcesController::class, 'update']);
             Route::delete('/{id}', [AdminResourcesController::class, 'destroy']);
+        });
+
+        Route::prefix('financial-calculators')->group(function () {
+            Route::get('/', [FinancialCalculatorController::class, 'index']);
+            Route::post('/', [FinancialCalculatorController::class, 'store']);
+            Route::put('/{id}', [FinancialCalculatorController::class, 'update']);
+            Route::delete('/{id}', [FinancialCalculatorController::class, 'destroy']);
+            Route::post('/calculate', [FinancialCalculatorController::class, 'calculate']);
         });
 
     });
