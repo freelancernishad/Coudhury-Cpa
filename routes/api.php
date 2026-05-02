@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\User\PackageAddon\UserPackageAddonController;
 use App\Http\Controllers\Api\User\ServicePurchased\ServicePurchasedDuePaymentController;
 use App\Http\Controllers\Api\Admin\Resources\FinancialCalculatorController;
 use App\Http\Controllers\Api\Admin\Resources\FinancialCalculatorCategoryController;
+use App\Http\Controllers\Api\Public\PublicResourceController;
 
 // Load users and admins route files
 if (file_exists($userRoutes = __DIR__.'/example.php')) {
@@ -68,6 +69,10 @@ Route::prefix('global/')->group(function () {
     Route::get('/financial-calculators', [FinancialCalculatorCategoryController::class, 'publicIndex']);
     Route::get('/financial-calculator/{id}', [FinancialCalculatorController::class, 'show']);
     Route::post('/financial-calculator/calculate', [FinancialCalculatorController::class, 'calculate']);
+
+    // Public Resources Routes
+    Route::get('/resources', [PublicResourceController::class, 'index']);
+    Route::get('/resource/{slug}', [PublicResourceController::class, 'showBySlug']);
 });
 
 
