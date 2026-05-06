@@ -7,6 +7,7 @@ use App\Models\Category;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
+use App\Jobs\SendNewBlogNotificationJob;
 
 class ArticlesController extends Controller
 {
@@ -46,6 +47,9 @@ class ArticlesController extends Controller
         if ($request->hasFile('banner_image')) {
             $article->saveBannerImage($request->file('banner_image'));
         }
+
+        // Dispatch notification email to subscribers (Directly without queue)
+        SendNewBlogNotificationJob::dispatchSync($article);
 
         return response()->json(['message' => 'Article created successfully', 'article' => $article], 201);
     }

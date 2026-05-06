@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\User\ServicePurchased\ServicePurchasedDuePaymentCon
 use App\Http\Controllers\Api\Admin\Resources\FinancialCalculatorController;
 use App\Http\Controllers\Api\Admin\Resources\FinancialCalculatorCategoryController;
 use App\Http\Controllers\Api\Public\PublicResourceController;
+use App\Http\Controllers\Api\Public\PublicBlogController;
 
 // Load users and admins route files
 if (file_exists($userRoutes = __DIR__.'/example.php')) {
@@ -73,6 +74,16 @@ Route::prefix('global/')->group(function () {
     // Public Resources Routes
     Route::get('/resources', [PublicResourceController::class, 'index']);
     Route::get('/resource/{slug}', [PublicResourceController::class, 'showBySlug']);
+
+    // Public Blog Routes
+    Route::get('/blogs/categories', [PublicBlogController::class, 'categories']);
+    Route::get('/blogs/articles', [PublicBlogController::class, 'articles']);
+    Route::get('/blogs/articles/{idOrSlug}', [PublicBlogController::class, 'show']);
+    Route::get('/blogs/articles/by-category/with-child-articles', [PublicBlogController::class, 'articlesByCategory']);
+
+    // Newsletter Routes
+    Route::post('/blogs/subscribe', [PublicBlogController::class, 'subscribe']);
+    Route::post('/blogs/unsubscribe', [PublicBlogController::class, 'unsubscribe']);
 });
 
 

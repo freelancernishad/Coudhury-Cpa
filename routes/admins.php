@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\Admin\Services\AdminServicesController;
 use App\Http\Controllers\Api\SystemSettings\SystemSettingController;
 use App\Http\Controllers\Api\Admin\Blogs\Articles\ArticlesController;
 use App\Http\Controllers\Api\Admin\Blogs\Category\CategoryController;
+use App\Http\Controllers\Api\Admin\Blogs\Subscribers\BlogSubscriberController;
 use App\Http\Controllers\Api\Admin\Student\AdminCourseNoteController;
 use App\Http\Controllers\Api\Admin\StudentV2\V2AdminStudentController;
 use App\Http\Controllers\Api\Admin\Transitions\AdminPaymentController;
@@ -167,6 +168,13 @@ Route::prefix('admin')->group(function () {
 
         Route::get('/by-category/with-child-articles', [ArticlesController::class, 'getArticlesByCategory']);
 
+    });
+
+    // Admin routes for blog subscribers
+    Route::group(['prefix' => 'blogs/subscribers'], function () {
+        Route::get('/', [BlogSubscriberController::class, 'index']);
+        Route::delete('/{id}', [BlogSubscriberController::class, 'destroy']);
+        Route::patch('/{id}/toggle-status', [BlogSubscriberController::class, 'toggleStatus']);
     });
 
 
