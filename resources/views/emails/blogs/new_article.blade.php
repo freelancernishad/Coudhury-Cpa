@@ -22,7 +22,7 @@
 
 <x-mail::message>
 <div style="text-align: center; margin-bottom: 20px;">
-    <h2 style="color: #0835A8; margin-bottom: 5px; font-size: 24px;">{{ config('app.name') }}</h2>
+    <h2 style="color: #0835A8; margin-bottom: 5px; font-size: 24px;">Chaudri CPA</h2>
     <p style="color: #646464; font-size: 14px; margin-top: 0;">Your Trusted Financial Partner</p>
 </div>
 
@@ -38,7 +38,7 @@
     {{ $previewText }}
 </div>
 
-<x-mail::button :url="config('app.frontend_url', 'http://localhost:3001') . '/blog/' . $article->id" color="primary">
+<x-mail::button :url="'https://chaudricpa.com/blog/' . $article->id" color="primary">
 Read Full Article
 </x-mail::button>
 
@@ -47,7 +47,7 @@ Read Full Article
         Stay ahead with the latest financial insights.
     </p>
     <p style="font-size: 12px; color: #a0aec0;">
-        © {{ date('Y') }} {{ config('app.name') }}. All rights reserved.
+        © {{ date('Y') }} Chaudri CPA. All rights reserved.
     </p>
 </div>
 
@@ -55,7 +55,7 @@ Read Full Article
 
 <div style="text-align: center;">
     <p style="font-size: 11px; color: #cbd5e0;">
-        You are receiving this email because you subscribed to the {{ config('app.name') }} newsletter.<br>
+        You are receiving this email because you subscribed to the Chaudri CPA newsletter.<br>
         <a href="{{ $unsubscribeUrl }}" style="color: #0835A8; text-decoration: underline;">Unsubscribe from this list</a>
     </p>
 </div>
