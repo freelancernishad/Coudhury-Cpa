@@ -32,7 +32,7 @@ class AuthUserController extends Controller
      */
    public function register(Request $request)
 {
-    $authConfig = getDomainAuthConfig();
+    $authConfig = getDomainAuthConfig($request);
     $role = $authConfig['role'];
     $redirectUrl = $authConfig['redirect_url'];
 
@@ -103,7 +103,7 @@ class AuthUserController extends Controller
      */
     public function login(Request $request)
     {
-        $authConfig = getDomainAuthConfig();
+        $authConfig = getDomainAuthConfig($request);
         $redirectUrl = $authConfig['redirect_url'];
 
         if($request->access_token){

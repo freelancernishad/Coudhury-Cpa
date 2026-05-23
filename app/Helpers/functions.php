@@ -40,9 +40,9 @@ function validateRequest(array $data, array $rules)
     return null; // Return null if validation passes
 }
 
-function getAppOrigin()
+function getAppOrigin($request = null)
 {
-    $request = request();
+    $request = $request ?: request();
     $origin = $request->header('Origin') ?: $request->header('Referer');
     if ($origin) {
         $parsed = parse_url($origin);
@@ -73,9 +73,9 @@ function getAppOrigin()
     return rtrim($originUrl, '/');
 }
 
-function getDomainAuthConfig()
+function getDomainAuthConfig($request = null)
 {
-    $originUrl = getAppOrigin();
+    $originUrl = getAppOrigin($request);
     $host = parse_url($originUrl, PHP_URL_HOST);
 
     $isStudent = false;

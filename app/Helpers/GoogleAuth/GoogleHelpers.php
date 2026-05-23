@@ -14,7 +14,7 @@ use Tymon\JWTAuth\Exceptions\JWTException;
 
 function handleGoogleAuth(Request $request)
 {
-    $authConfig = getDomainAuthConfig();
+    $authConfig = getDomainAuthConfig($request);
     $role = $authConfig['role'];
     $redirectUrl = $authConfig['redirect_url'];
 
@@ -102,7 +102,7 @@ function handleGoogleAuth(Request $request)
 
 function handleAppleAuth(Request $request)
 {
-    $authConfig = getDomainAuthConfig();
+    $authConfig = getDomainAuthConfig($request);
     $role = $authConfig['role'];
     $redirectUrl = $authConfig['redirect_url'];
 
