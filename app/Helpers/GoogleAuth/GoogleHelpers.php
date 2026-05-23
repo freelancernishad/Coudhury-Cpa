@@ -48,6 +48,54 @@ function handleGoogleAuth(Request $request)
         $userData = $response->json();
         $user = User::where('email', $userData['email'])->first();
 
+        if ($user) {
+            if ($user->role !== $authConfig['role']) {
+                try {
+                    $token = JWTAuth::fromUser($user, ['guard' => 'user']);
+                } catch (\Exception $e) {
+                    $token = null;
+                }
+
+                $originUrl = getAppOrigin($request);
+                $parsed = parse_url($originUrl);
+                $scheme = $parsed['scheme'] ?? 'http';
+                $host = $parsed['host'] ?? '';
+                $port = isset($parsed['port']) ? ':' . $parsed['port'] : '';
+
+                if ($user->role === 'student') {
+                    if ($host && !str_starts_with($host, 'cu.') && !str_contains($host, '.cu.')) {
+                        if ($host === 'localhost' || $host === '127.0.0.1') {
+                            $host = 'cu.localhost';
+                        } else {
+                            $host = 'cu.' . $host;
+                        }
+                    }
+                } else {
+                    if ($host && (str_starts_with($host, 'cu.') || str_contains($host, '.cu.'))) {
+                        if (str_starts_with($host, 'cu.')) {
+                            $host = substr($host, 3);
+                        }
+                    }
+                }
+                $targetOrigin = $scheme . '://' . $host . $port;
+                $targetLoginUrl = $targetOrigin . '/login?token=' . $token;
+
+                if ($user->role === 'student') {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'Students are not allowed to login from the main domain.',
+                        'redirect_url' => $targetLoginUrl,
+                    ], 403);
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'Clients are not allowed to login from the student domain.',
+                        'redirect_url' => $targetLoginUrl,
+                    ], 403);
+                }
+            }
+        }
+
         if (!$user) {
 
             $role = $request->input('role', 'client');
@@ -85,7 +133,7 @@ function handleGoogleAuth(Request $request)
         return response()->json([
             'token' => $token,
             'user' => $payload,
-            'redirect_url' => $redirectUrl,
+            'redirect_url' => $redirectUrl . (str_contains($redirectUrl, '?') ? '&' : '?') . 'token=' . $token,
             'detected_origin' => $authConfig['detected_origin'] ?? null,
             'requested_origin' => $request->header('Origin') ?: $request->header('Referer'),
         ], 200);
@@ -133,6 +181,54 @@ function handleAppleAuth(Request $request)
 
         $user = User::where('email', $appleUserInfo['email'])->first();
 
+        if ($user) {
+            if ($user->role !== $authConfig['role']) {
+                try {
+                    $token = JWTAuth::fromUser($user, ['guard' => 'user']);
+                } catch (\Exception $e) {
+                    $token = null;
+                }
+
+                $originUrl = getAppOrigin($request);
+                $parsed = parse_url($originUrl);
+                $scheme = $parsed['scheme'] ?? 'http';
+                $host = $parsed['host'] ?? '';
+                $port = isset($parsed['port']) ? ':' . $parsed['port'] : '';
+
+                if ($user->role === 'student') {
+                    if ($host && !str_starts_with($host, 'cu.') && !str_contains($host, '.cu.')) {
+                        if ($host === 'localhost' || $host === '127.0.0.1') {
+                            $host = 'cu.localhost';
+                        } else {
+                            $host = 'cu.' . $host;
+                        }
+                    }
+                } else {
+                    if ($host && (str_starts_with($host, 'cu.') || str_contains($host, '.cu.'))) {
+                        if (str_starts_with($host, 'cu.')) {
+                            $host = substr($host, 3);
+                        }
+                    }
+                }
+                $targetOrigin = $scheme . '://' . $host . $port;
+                $targetLoginUrl = $targetOrigin . '/login?token=' . $token;
+
+                if ($user->role === 'student') {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'Students are not allowed to login from the main domain.',
+                        'redirect_url' => $targetLoginUrl,
+                    ], 403);
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'Clients are not allowed to login from the student domain.',
+                        'redirect_url' => $targetLoginUrl,
+                    ], 403);
+                }
+            }
+        }
+
         if (!$user) {
             $role = $request->input('role', 'client'); // default role
 
@@ -171,7 +267,7 @@ function handleAppleAuth(Request $request)
         return response()->json([
             'token' => $token,
             'user' => $payload,
-            'redirect_url' => $redirectUrl,
+            'redirect_url' => $redirectUrl . (str_contains($redirectUrl, '?') ? '&' : '?') . 'token=' . $token,
             'detected_origin' => $authConfig['detected_origin'] ?? null,
             'requested_origin' => $request->header('Origin') ?: $request->header('Referer'),
         ], 200);

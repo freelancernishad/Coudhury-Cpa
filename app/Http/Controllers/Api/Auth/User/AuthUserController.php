@@ -91,7 +91,7 @@ class AuthUserController extends Controller
         return response()->json([
             'token' => $token,
             'user' => $payload,
-            'redirect_url' => $redirectUrl,
+            'redirect_url' => $redirectUrl . (str_contains($redirectUrl, '?') ? '&' : '?') . 'token=' . $token,
             'detected_origin' => $authConfig['detected_origin'] ?? null,
         ], 201);
     }
@@ -134,8 +134,51 @@ class AuthUserController extends Controller
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
 
+            if ($user->role !== $authConfig['role']) {
+                try {
+                    $token = JWTAuth::fromUser($user, ['guard' => 'user']);
+                } catch (JWTException $e) {
+                    $token = null;
+                }
 
+                $originUrl = getAppOrigin($request);
+                $parsed = parse_url($originUrl);
+                $scheme = $parsed['scheme'] ?? 'http';
+                $host = $parsed['host'] ?? '';
+                $port = isset($parsed['port']) ? ':' . $parsed['port'] : '';
 
+                if ($user->role === 'student') {
+                    if ($host && !str_starts_with($host, 'cu.') && !str_contains($host, '.cu.')) {
+                        if ($host === 'localhost' || $host === '127.0.0.1') {
+                            $host = 'cu.localhost';
+                        } else {
+                            $host = 'cu.' . $host;
+                        }
+                    }
+                } else {
+                    if ($host && (str_starts_with($host, 'cu.') || str_contains($host, '.cu.'))) {
+                        if (str_starts_with($host, 'cu.')) {
+                            $host = substr($host, 3);
+                        }
+                    }
+                }
+                $targetOrigin = $scheme . '://' . $host . $port;
+                $targetLoginUrl = $targetOrigin . '/login?token=' . $token;
+
+                if ($user->role === 'student') {
+                    return response()->json([
+                        'message' => 'Students are not allowed to login from the main domain.',
+                        'redirect_url' => $targetLoginUrl,
+                        'requested_origin' => $request->header('Origin') ?: $request->header('Referer'),
+                    ], 403);
+                } else {
+                    return response()->json([
+                        'message' => 'Clients are not allowed to login from the student domain.',
+                        'redirect_url' => $targetLoginUrl,
+                        'requested_origin' => $request->header('Origin') ?: $request->header('Referer'),
+                    ], 403);
+                }
+            }
 
             if (!$user->hasVerifiedEmail()) {
                 $verify_url = $request->verify_url ?? null;
@@ -187,7 +230,7 @@ class AuthUserController extends Controller
             return response()->json([
                 'token' => $token,
                 'user' => $payload,
-                'redirect_url' => $redirectUrl,
+                'redirect_url' => $redirectUrl . (str_contains($redirectUrl, '?') ? '&' : '?') . 'token=' . $token,
                 'detected_origin' => $authConfig['detected_origin'] ?? null,
                 'requested_origin' => $request->header('Origin') ?: $request->header('Referer'),
             ], 200);
