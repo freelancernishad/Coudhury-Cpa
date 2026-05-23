@@ -53,6 +53,23 @@ function getAppOrigin()
     } else {
         $originUrl = $request->getSchemeAndHttpHost();
     }
+
+    $parsedAppUrl = parse_url($originUrl);
+    $host = $parsedAppUrl['host'] ?? '';
+
+    // Port mapping for local development
+    if (isset($parsedAppUrl['port']) && $parsedAppUrl['port'] == '8000') {
+        $originUrl = str_replace(':8000', ':3000', $originUrl);
+    } 
+    // Subdomain mappings for production/staging APIs
+    elseif (str_starts_with($host, 'api.')) {
+        $newHost = substr($host, 4);
+        $originUrl = str_replace($host, $newHost, $originUrl);
+    } elseif (str_starts_with($host, 'cu-api.')) {
+        $newHost = 'cu.' . substr($host, 7);
+        $originUrl = str_replace($host, $newHost, $originUrl);
+    }
+
     return rtrim($originUrl, '/');
 }
 
