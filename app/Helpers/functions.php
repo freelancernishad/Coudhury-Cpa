@@ -43,7 +43,11 @@ function validateRequest(array $data, array $rules)
 function getAppOrigin($request = null)
 {
     $request = $request ?: request();
-    $origin = $request->header('Origin') ?: $request->header('Referer');
+    $origin = $request->header('X-Frontend-Origin')
+           ?: $request->input('origin')
+           ?: $request->header('Origin')
+           ?: $request->header('Referer');
+
     if ($origin) {
         $parsed = parse_url($origin);
         $scheme = $parsed['scheme'] ?? 'http';
