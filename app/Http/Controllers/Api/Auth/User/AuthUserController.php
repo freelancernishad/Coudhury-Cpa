@@ -191,10 +191,14 @@ class AuthUserController extends Controller
                 'user' => $payload,
                 'redirect_url' => $redirectUrl,
                 'detected_origin' => $authConfig['detected_origin'] ?? null,
+                'request_headers' => $request->headers->all(),
             ], 200);
         }
 
-        return response()->json(['message' => 'Invalid credentials'], 401);
+        return response()->json([
+            'message' => 'Invalid credentials',
+            'request_headers' => $request->headers->all(),
+        ], 401);
     }
 
 
