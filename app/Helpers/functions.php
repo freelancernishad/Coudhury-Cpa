@@ -90,5 +90,6 @@ function getDomainAuthConfig($request = null)
     return [
         'role' => $isStudent ? 'student' : 'client',
         'redirect_url' => $originUrl . ($isStudent ? '/student/my-courses' : '/dashboard'),
+        'detected_origin' => $originUrl,
     ];
 }

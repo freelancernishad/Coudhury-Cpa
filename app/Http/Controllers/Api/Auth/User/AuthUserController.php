@@ -92,6 +92,7 @@ class AuthUserController extends Controller
         'token' => $token,
         'user' => $payload,
         'redirect_url' => $redirectUrl,
+        'detected_origin' => $authConfig['detected_origin'] ?? null,
     ], 201);
 }
 
@@ -189,6 +190,7 @@ class AuthUserController extends Controller
                 'token' => $token,
                 'user' => $payload,
                 'redirect_url' => $redirectUrl,
+                'detected_origin' => $authConfig['detected_origin'] ?? null,
             ], 200);
         }
 
