@@ -82,20 +82,13 @@ function getDomainAuthConfig($request = null)
     $request = $request ?: request();
     $originUrl = getAppOrigin($request);
 
-    // Get the role from request body or query parameter
-    $role = $request->input('role');
-
-    if ($role) {
-        $isStudent = ($role === 'student');
-    } else {
-        // Fallback to detecting role from host name
-        $host = parse_url($originUrl, PHP_URL_HOST);
-        $isStudent = false;
-        if ($host && (str_starts_with($host, 'cu.') || str_contains($host, '.cu.'))) {
-            $isStudent = true;
-        }
-        $role = $isStudent ? 'student' : 'client';
+    // Detect role solely from the origin host name
+    $host = parse_url($originUrl, PHP_URL_HOST);
+    $isStudent = false;
+    if ($host && (str_starts_with($host, 'cu.') || str_contains($host, '.cu.'))) {
+        $isStudent = true;
     }
+    $role = $isStudent ? 'student' : 'client';
 
     // Adjust the originUrl host dynamically based on the verified role
     $parsed = parse_url($originUrl);
