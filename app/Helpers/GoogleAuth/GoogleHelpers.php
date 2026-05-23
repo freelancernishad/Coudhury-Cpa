@@ -14,6 +14,14 @@ use Tymon\JWTAuth\Exceptions\JWTException;
 
 function handleGoogleAuth(Request $request)
 {
+    $authConfig = getDomainAuthConfig();
+    $role = $authConfig['role'];
+    $redirectUrl = $authConfig['redirect_url'];
+
+    $request->merge([
+        'role' => $role
+    ]);
+
     // Validate the access token
     $validator = Validator::make($request->all(), [
         'access_token' => 'required|string',
@@ -42,7 +50,7 @@ function handleGoogleAuth(Request $request)
 
         if (!$user) {
 
-              $role = $request->input('role', 'client');
+            $role = $request->input('role', 'client');
             // Register the user if they don't exist
             $user = User::create([
                 'name' => $userData['name'] ?? explode('@', $userData['email'])[0],
@@ -51,8 +59,8 @@ function handleGoogleAuth(Request $request)
                 'email_verified_at' => now(),
                 'role' => $role,
             ]);
-        }else{
-            $user->update(['email_verified_at'=> now()]);
+        } else {
+            $user->update(['email_verified_at' => now()]);
         }
 
         // Authenticate the user
@@ -77,6 +85,7 @@ function handleGoogleAuth(Request $request)
         return response()->json([
             'token' => $token,
             'user' => $payload,
+            'redirect_url' => $redirectUrl,
         ], 200);
     } catch (\Exception $e) {
         return response()->json([
@@ -93,6 +102,14 @@ function handleGoogleAuth(Request $request)
 
 function handleAppleAuth(Request $request)
 {
+    $authConfig = getDomainAuthConfig();
+    $role = $authConfig['role'];
+    $redirectUrl = $authConfig['redirect_url'];
+
+    $request->merge([
+        'role' => $role
+    ]);
+
     $validator = Validator::make($request->all(), [
         'identity_token' => 'required|string',
         'name' => 'nullable|string',
@@ -152,6 +169,7 @@ function handleAppleAuth(Request $request)
         return response()->json([
             'token' => $token,
             'user' => $payload,
+            'redirect_url' => $redirectUrl,
         ], 200);
     } catch (\Exception $e) {
         return response()->json([

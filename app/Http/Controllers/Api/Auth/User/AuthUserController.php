@@ -32,6 +32,12 @@ class AuthUserController extends Controller
      */
    public function register(Request $request)
 {
+    $authConfig = getDomainAuthConfig();
+    $role = $authConfig['role'];
+    $redirectUrl = $authConfig['redirect_url'];
+
+    $request->merge(['role' => $role]);
+
     $validator = Validator::make($request->all(), [
         'name' => 'required|string|max:255',
         'email' => 'required|string|email|max:255|unique:users',
@@ -42,9 +48,6 @@ class AuthUserController extends Controller
     if ($validator->fails()) {
         return response()->json(['errors' => $validator->errors()], 400);
     }
-
-    // Determine role from request or default to 'client'
-    $role = $request->input('role', 'client');
 
     // Create the user
     $user = User::create([
@@ -88,6 +91,7 @@ class AuthUserController extends Controller
     return response()->json([
         'token' => $token,
         'user' => $payload,
+        'redirect_url' => $redirectUrl,
     ], 201);
 }
 
@@ -99,7 +103,8 @@ class AuthUserController extends Controller
      */
     public function login(Request $request)
     {
-
+        $authConfig = getDomainAuthConfig();
+        $redirectUrl = $authConfig['redirect_url'];
 
         if($request->access_token){
 
@@ -183,6 +188,7 @@ class AuthUserController extends Controller
             return response()->json([
                 'token' => $token,
                 'user' => $payload,
+                'redirect_url' => $redirectUrl,
             ], 200);
         }
 
