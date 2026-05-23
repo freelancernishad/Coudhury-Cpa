@@ -30,71 +30,71 @@ class AuthUserController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
-   public function register(Request $request)
-{
-    $authConfig = getDomainAuthConfig($request);
-    $role = $authConfig['role'];
-    $redirectUrl = $authConfig['redirect_url'];
+    public function register(Request $request)
+    {
+        $authConfig = getDomainAuthConfig($request);
+        $role = $authConfig['role'];
+        $redirectUrl = $authConfig['redirect_url'];
 
-    $request->merge(['role' => $role]);
+        $request->merge(['role' => $role]);
 
-    $validator = Validator::make($request->all(), [
-        'name' => 'required|string|max:255',
-        'email' => 'required|string|email|max:255|unique:users',
-        'password' => 'required|string|min:8|confirmed',
-        'role' => 'in:client,student', // Optional validation, only allow specific roles
-    ]);
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+            'role' => 'in:client,student', // Optional validation, only allow specific roles
+        ]);
 
-    if ($validator->fails()) {
-        return response()->json(['errors' => $validator->errors()], 400);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 400);
+        }
+
+        // Create the user
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => $role,
+        ]);
+
+        // Generate a JWT token for the newly created user
+        try {
+            $token = JWTAuth::fromUser($user, ['guard' => 'user']);
+        } catch (JWTException $e) {
+            return response()->json(['error' => 'Could not create token'], 500);
+        }
+
+        // Generate verification URL (if applicable)
+        $verify_url = $request->verify_url ?? null;
+
+        // Notify user for email verification or OTP
+        if ($verify_url) {
+            Mail::to($user->email)->send(new VerifyEmail($user, $verify_url));
+        } else {
+            $otp = random_int(100000, 999999);
+            $user->otp = Hash::make($otp);
+            $user->otp_expires_at = now()->addMinutes(5);
+            $user->save();
+
+            Mail::to($user->email)->send(new OtpNotification($otp, $user));
+        }
+
+        // Define payload data
+        $payload = [
+            'email' => $user->email,
+            'name' => $user->name,
+            'role' => $user->role,
+            'category' => $user->category ?? null,
+            'email_verified' => $user->hasVerifiedEmail(),
+        ];
+
+        return response()->json([
+            'token' => $token,
+            'user' => $payload,
+            'redirect_url' => $redirectUrl,
+            'detected_origin' => $authConfig['detected_origin'] ?? null,
+        ], 201);
     }
-
-    // Create the user
-    $user = User::create([
-        'name' => $request->name,
-        'email' => $request->email,
-        'password' => Hash::make($request->password),
-        'role' => $role,
-    ]);
-
-    // Generate a JWT token for the newly created user
-    try {
-        $token = JWTAuth::fromUser($user, ['guard' => 'user']);
-    } catch (JWTException $e) {
-        return response()->json(['error' => 'Could not create token'], 500);
-    }
-
-    // Generate verification URL (if applicable)
-    $verify_url = $request->verify_url ?? null;
-
-    // Notify user for email verification or OTP
-    if ($verify_url) {
-        Mail::to($user->email)->send(new VerifyEmail($user, $verify_url));
-    } else {
-        $otp = random_int(100000, 999999);
-        $user->otp = Hash::make($otp);
-        $user->otp_expires_at = now()->addMinutes(5);
-        $user->save();
-
-        Mail::to($user->email)->send(new OtpNotification($otp,$user));
-    }
-
-    // Define payload data
-    $payload = [
-        'email' => $user->email,
-        'name' => $user->name,
-        'role' => $user->role,
-        'category' => $user->category ?? null,
-        'email_verified' => $user->hasVerifiedEmail(),
-    ];
-
-    return response()->json([
-        'token' => $token,
-        'user' => $payload,
-        'redirect_url' => $redirectUrl,
-        'detected_origin' => $authConfig['detected_origin'] ?? null,
-    ], 201);
-}
 
     /**
      * Log in a user.
@@ -107,7 +107,7 @@ class AuthUserController extends Controller
         $authConfig = getDomainAuthConfig($request);
         $redirectUrl = $authConfig['redirect_url'];
 
-        if($request->access_token){
+        if ($request->access_token) {
 
             return handleGoogleAuth($request);
         }
@@ -145,7 +145,6 @@ class AuthUserController extends Controller
                         Mail::to($user->email)->send(new VerifyEmail($user, $verify_url));
                     } catch (\Exception $e) {
                         Log::error('Failed to send verification email: ' . $e->getMessage());
-
                     }
                 } else {
                     $otp = random_int(100000, 999999);
@@ -157,7 +156,6 @@ class AuthUserController extends Controller
                         Mail::to($user->email)->send(new OtpNotification($otp, $user));
                     } catch (\Exception $e) {
                         Log::error('Failed to send OTP: ' . $e->getMessage());
-
                     }
                 }
             }
@@ -191,13 +189,13 @@ class AuthUserController extends Controller
                 'user' => $payload,
                 'redirect_url' => $redirectUrl,
                 'detected_origin' => $authConfig['detected_origin'] ?? null,
-                'request_headers' => $request->headers->all(),
+                'requested_origin' => $request->header('Origin') ?: $request->header('Referer'),
             ], 200);
         }
 
         return response()->json([
             'message' => 'Invalid credentials',
-            'request_headers' => $request->headers->all(),
+            'requested_origin' => $request->header('Origin') ?: $request->header('Referer'),
         ], 401);
     }
 
@@ -250,7 +248,7 @@ class AuthUserController extends Controller
         }
     }
 
-  /**
+    /**
      * Change the password of the authenticated user.
      */
     public function changePassword(Request $request)
@@ -312,7 +310,7 @@ class AuthUserController extends Controller
                 'email_verified' => $user->hasVerifiedEmail(), // Checks verification status
             ];
 
-            return response()->json(['message' => 'Token is valid.','user'=>$payload], 200);
+            return response()->json(['message' => 'Token is valid.', 'user' => $payload], 200);
         } catch (\Tymon\JWTAuth\Exceptions\TokenExpiredException $e) {
             return response()->json(['message' => 'Token has expired.'], 401);
         } catch (\Tymon\JWTAuth\Exceptions\TokenInvalidException $e) {
@@ -321,5 +319,4 @@ class AuthUserController extends Controller
             return response()->json(['message' => 'Token is missing or malformed.'], 401);
         }
     }
-
 }

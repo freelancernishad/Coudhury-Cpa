@@ -87,7 +87,7 @@ function handleGoogleAuth(Request $request)
             'user' => $payload,
             'redirect_url' => $redirectUrl,
             'detected_origin' => $authConfig['detected_origin'] ?? null,
-            'request_headers' => $request->headers->all(),
+            'requested_origin' => $request->header('Origin') ?: $request->header('Referer'),
         ], 200);
     } catch (\Exception $e) {
         return response()->json([
@@ -173,7 +173,7 @@ function handleAppleAuth(Request $request)
             'user' => $payload,
             'redirect_url' => $redirectUrl,
             'detected_origin' => $authConfig['detected_origin'] ?? null,
-            'request_headers' => $request->headers->all(),
+            'requested_origin' => $request->header('Origin') ?: $request->header('Referer'),
         ], 200);
     } catch (\Exception $e) {
         return response()->json([
