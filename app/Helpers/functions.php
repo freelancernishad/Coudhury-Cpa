@@ -79,16 +79,52 @@ function getAppOrigin($request = null)
 
 function getDomainAuthConfig($request = null)
 {
+    $request = $request ?: request();
     $originUrl = getAppOrigin($request);
-    $host = parse_url($originUrl, PHP_URL_HOST);
 
-    $isStudent = false;
-    if ($host && (str_starts_with($host, 'cu.') || str_contains($host, '.cu.'))) {
-        $isStudent = true;
+    // Get the role from request body or query parameter
+    $role = $request->input('role');
+
+    if ($role) {
+        $isStudent = ($role === 'student');
+    } else {
+        // Fallback to detecting role from host name
+        $host = parse_url($originUrl, PHP_URL_HOST);
+        $isStudent = false;
+        if ($host && (str_starts_with($host, 'cu.') || str_contains($host, '.cu.'))) {
+            $isStudent = true;
+        }
+        $role = $isStudent ? 'student' : 'client';
     }
 
+    // Adjust the originUrl host dynamically based on the verified role
+    $parsed = parse_url($originUrl);
+    $scheme = $parsed['scheme'] ?? 'http';
+    $host = $parsed['host'] ?? '';
+    $port = isset($parsed['port']) ? ':' . $parsed['port'] : '';
+
+    if ($isStudent) {
+        // Ensure the host has the 'cu.' prefix
+        if ($host && !str_starts_with($host, 'cu.') && !str_contains($host, '.cu.')) {
+            if ($host === 'localhost' || $host === '127.0.0.1') {
+                $host = 'cu.localhost';
+            } else {
+                $host = 'cu.' . $host;
+            }
+        }
+    } else {
+        // Ensure the host does NOT have the 'cu.' prefix
+        if ($host && (str_starts_with($host, 'cu.') || str_contains($host, '.cu.'))) {
+            if (str_starts_with($host, 'cu.')) {
+                $host = substr($host, 3);
+            }
+        }
+    }
+
+    $originUrl = $scheme . '://' . $host . $port;
+
     return [
-        'role' => $isStudent ? 'student' : 'client',
+        'role' => $role,
         'redirect_url' => $originUrl . ($isStudent ? '/student/my-courses' : '/dashboard'),
         'detected_origin' => $originUrl,
     ];
