@@ -167,13 +167,13 @@ class AuthUserController extends Controller
 
                 if ($user->role === 'student') {
                     return response()->json([
-                        'message' => 'Students are not allowed to login from the main domain.',
+                        'message' => 'It appears that you are about to log in as a Chaudri CPA client instead of a student. Do you wish to continue?',
                         'redirect_url' => $targetLoginUrl,
                         'requested_origin' => $request->header('Origin') ?: $request->header('Referer'),
                     ], 403);
                 } else {
                     return response()->json([
-                        'message' => 'Clients are not allowed to login from the student domain.',
+                        'message' => 'It appears that you are about to log in as a student instead of a Chaudri CPA client. Do you wish to continue?',
                         'redirect_url' => $targetLoginUrl,
                         'requested_origin' => $request->header('Origin') ?: $request->header('Referer'),
                     ], 403);

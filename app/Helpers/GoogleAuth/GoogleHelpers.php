@@ -83,13 +83,13 @@ function handleGoogleAuth(Request $request)
                 if ($user->role === 'student') {
                     return response()->json([
                         'success' => false,
-                        'error' => 'Students are not allowed to login from the main domain.',
+                        'error' => 'It appears that you are about to log in as a Chaudri CPA client instead of a student. Do you wish to continue?',
                         'redirect_url' => $targetLoginUrl,
                     ], 403);
                 } else {
                     return response()->json([
                         'success' => false,
-                        'error' => 'Clients are not allowed to login from the student domain.',
+                        'error' => 'It appears that you are about to log in as a student instead of a Chaudri CPA client. Do you wish to continue?',
                         'redirect_url' => $targetLoginUrl,
                     ], 403);
                 }
@@ -216,13 +216,13 @@ function handleAppleAuth(Request $request)
                 if ($user->role === 'student') {
                     return response()->json([
                         'success' => false,
-                        'error' => 'Students are not allowed to login from the main domain.',
+                        'error' => 'It appears that you are about to log in as a Chaudri CPA client instead of a student. Do you wish to continue?',
                         'redirect_url' => $targetLoginUrl,
                     ], 403);
                 } else {
                     return response()->json([
                         'success' => false,
-                        'error' => 'Clients are not allowed to login from the student domain.',
+                        'error' => 'It appears that you are about to log in as a student instead of a Chaudri CPA client. Do you wish to continue?',
                         'redirect_url' => $targetLoginUrl,
                     ], 403);
                 }
