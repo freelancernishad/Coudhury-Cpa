@@ -89,7 +89,7 @@ function handleGoogleAuth(Request $request)
                 } else {
                     return response()->json([
                         'success' => false,
-                        'error' => 'It appears that you are about to log in as a student instead of a Chaudri CPA client. Do you wish to continue?',
+                        'error' => 'Warning: By proceeding with this email address, you will be registered as a Chaudri CPA client. If you wish to create a student account in the future, a separate email address will be required.',
                         'redirect_url' => $targetLoginUrl,
                     ], 403);
                 }
@@ -222,7 +222,7 @@ function handleAppleAuth(Request $request)
                 } else {
                     return response()->json([
                         'success' => false,
-                        'error' => 'It appears that you are about to log in as a student instead of a Chaudri CPA client. Do you wish to continue?',
+                        'error' => 'Warning: By proceeding with this email address, you will be registered as a Chaudri CPA client. If you wish to create a student account in the future, a separate email address will be required.',
                         'redirect_url' => $targetLoginUrl,
                     ], 403);
                 }

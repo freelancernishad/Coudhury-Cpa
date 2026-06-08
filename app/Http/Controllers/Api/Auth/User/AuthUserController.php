@@ -173,7 +173,7 @@ class AuthUserController extends Controller
                     ], 403);
                 } else {
                     return response()->json([
-                        'message' => 'It appears that you are about to log in as a student instead of a Chaudri CPA client. Do you wish to continue?',
+                        'message' => 'Warning: By proceeding with this email address, you will be registered as a Chaudri CPA client. If you wish to create a student account in the future, a separate email address will be required.',
                         'redirect_url' => $targetLoginUrl,
                         'requested_origin' => $request->header('Origin') ?: $request->header('Referer'),
                     ], 403);
